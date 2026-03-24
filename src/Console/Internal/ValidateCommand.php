@@ -8,6 +8,7 @@ use Scafera\Kernel\Console\Attribute\AsCommand;
 use Scafera\Kernel\Console\Command;
 use Scafera\Kernel\Console\Input;
 use Scafera\Kernel\Console\Output;
+use Scafera\Kernel\Contract\AdvisorInterface;
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Contract\ValidatorInterface;
 use Scafera\Kernel\InstalledPackages;
@@ -71,6 +72,8 @@ class ValidateCommand extends Command
             }
         }
 
+        $this->runAdvisors($architecture, $output);
+
         $output->writeln('');
 
         if ($failed === 0) {
@@ -82,6 +85,38 @@ class ValidateCommand extends Command
         $output->error($failed . ' check(s) failed, ' . $totalViolations . ' violation(s) found.');
 
         return self::FAILURE;
+    }
+
+    private function runAdvisors(ArchitecturePackageInterface $architecture, Output $output): void
+    {
+        $advisorClasses = $architecture->getAdvisors();
+        if (empty($advisorClasses)) {
+            return;
+        }
+
+        $messages = [];
+
+        foreach ($advisorClasses as $class) {
+            if (!class_exists($class) || !is_subclass_of($class, AdvisorInterface::class)) {
+                continue;
+            }
+
+            /** @var AdvisorInterface $advisor */
+            $advisor = new $class();
+            $hints = $advisor->advise($this->projectDir);
+
+            if (!empty($hints)) {
+                $messages[] = $advisor->getName() . ':';
+                foreach ($hints as $hint) {
+                    $messages[] = '  · ' . $hint;
+                }
+            }
+        }
+
+        if (!empty($messages)) {
+            $output->writeln('');
+            $output->note($messages);
+        }
     }
 
     private function resolveArchitecture(): ?ArchitecturePackageInterface

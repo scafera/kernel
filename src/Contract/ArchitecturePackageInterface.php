@@ -24,4 +24,7 @@ interface ArchitecturePackageInterface
 
     /** @return list<string> Generator class names */
     public function getGenerators(): array;
+
+    /** @return list<string> Advisor class names (warnings, never block) */
+    public function getAdvisors(): array;
 }
