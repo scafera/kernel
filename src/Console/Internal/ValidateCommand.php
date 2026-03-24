@@ -94,7 +94,9 @@ class ValidateCommand extends Command
             return;
         }
 
+        $output->writeln('');
         $messages = [];
+        $hasOutput = false;
 
         foreach ($advisorClasses as $class) {
             if (!class_exists($class) || !is_subclass_of($class, AdvisorInterface::class)) {
@@ -103,6 +105,15 @@ class ValidateCommand extends Command
 
             /** @var AdvisorInterface $advisor */
             $advisor = new $class();
+            $status = $advisor->canRun($this->projectDir);
+
+            if (!$status->ready) {
+                $output->writeln('  <fg=yellow>⊘</> ' . $advisor->getName() . ' <fg=yellow>skipped</> (' . $status->reason . ')');
+                $hasOutput = true;
+
+                continue;
+            }
+
             $hints = $advisor->advise($this->projectDir);
 
             if (!empty($hints)) {

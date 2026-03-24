@@ -8,6 +8,8 @@ interface AdvisorInterface
 {
     public function getName(): string;
 
+    public function canRun(string $projectDir): AdvisorStatus;
+
     /**
      * @return list<string> List of advisory messages (empty = nothing to report).
      */
