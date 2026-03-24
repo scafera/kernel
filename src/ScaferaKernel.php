@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace Scafera\Kernel;
 
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
+use Scafera\Kernel\Console\Internal\ValidateCommand;
+use Scafera\Kernel\DependencyInjection\ControllerBoundaryPass;
+use Scafera\Kernel\Http\Internal\RequestResolver;
+use Scafera\Kernel\Http\Internal\ResponseListener;
+use Scafera\Kernel\Http\Internal\RouteLoader;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Yaml\Yaml;
@@ -20,15 +26,22 @@ class ScaferaKernel extends BaseKernel
     private ?ArchitecturePackageInterface $architecturePackage = null;
     private bool $architectureResolved = false;
 
-    public function __construct(string $environment, bool $debug, string $projectDir)
+    public function __construct(string $environment, bool $debug, ?string $projectDir = null)
     {
-        $this->projectDir = $projectDir;
+        $this->projectDir = $projectDir ?? $_SERVER['KERNEL_PROJECT_DIR'] ?? getcwd();
         parent::__construct($environment, $debug);
     }
 
     public function getProjectDir(): string
     {
         return $this->projectDir;
+    }
+
+    protected function build(ContainerBuilder $container): void
+    {
+        $container->addCompilerPass(
+            new ControllerBoundaryPass($this->projectDir, $this->getArchitecturePackage()),
+        );
     }
 
     public function registerBundles(): iterable
@@ -58,6 +71,8 @@ class ScaferaKernel extends BaseKernel
             ->bind('string $projectDir', $this->getProjectDir())
             ->load('Scafera\\Kernel\\Service\\', dirname(__DIR__) . '/src/Service/');
 
+        $this->registerHttpInfrastructure($c);
+
         $this->loadArchitectureServices($c);
 
         $this->loadOverrides($c);
@@ -66,11 +81,42 @@ class ScaferaKernel extends BaseKernel
     protected function configureRoutes(RoutingConfigurator $routes): void
     {
         $architecture = $this->getArchitecturePackage();
-        if ($architecture) {
-            foreach ($architecture->getControllerPaths() as $path) {
-                $routes->import($this->getProjectDir() . '/' . $path, 'attribute');
+        if (!$architecture) {
+            return;
+        }
+
+        foreach ($architecture->getControllerPaths() as $path) {
+            $dir = $this->getProjectDir() . '/' . $path;
+            foreach (RouteLoader::loadFromDirectory($dir) as $name => $route) {
+                $entry = $routes->add($name, $route['path'])
+                    ->controller($route['controller'])
+                    ->defaults($route['defaults']);
+
+                if (!empty($route['methods'])) {
+                    $entry->methods($route['methods']);
+                }
+                if (!empty($route['requirements'])) {
+                    $entry->requirements($route['requirements']);
+                }
             }
         }
+    }
+
+    private function registerHttpInfrastructure(ContainerConfigurator $c): void
+    {
+        $c->services()
+            ->set(RequestResolver::class)
+                ->autowire()
+                ->tag('controller.argument_value_resolver', ['priority' => 10])
+            ->set(ResponseListener::class)
+                ->tag('kernel.event_subscriber');
+
+        $c->services()
+            ->set(ValidateCommand::class)
+                ->args([
+                    $this->getProjectDir(),
+                ])
+                ->tag('console.command');
     }
 
     private function loadArchitectureServices(ContainerConfigurator $c): void
@@ -85,6 +131,30 @@ class ScaferaKernel extends BaseKernel
         $services = $c->services()->defaults()->autowire()->autoconfigure();
         $services->load($discovery['namespace'], $projectDir . '/' . $discovery['resource'])
             ->exclude(array_map(fn($e) => $projectDir . '/' . $e, $discovery['exclude']));
+
+        // Tag controller services so Symfony can resolve their dependencies.
+        foreach ($architecture->getControllerPaths() as $path) {
+            $ns = $this->pathToNamespace($discovery['namespace'], $discovery['resource'], $path);
+            if ($ns !== null) {
+                $c->services()->defaults()->autowire()->autoconfigure()
+                    ->load($ns, $projectDir . '/' . $path)
+                    ->tag('controller.service_arguments');
+            }
+        }
+    }
+
+    private function pathToNamespace(string $rootNamespace, string $rootResource, string $controllerPath): ?string
+    {
+        $rootResource = rtrim($rootResource, '/') . '/';
+        $controllerPath = rtrim($controllerPath, '/') . '/';
+
+        if (!str_starts_with($controllerPath, $rootResource)) {
+            return null;
+        }
+
+        $relative = substr($controllerPath, strlen($rootResource));
+
+        return $rootNamespace . str_replace('/', '\\', $relative);
     }
 
     private function loadOverrides(ContainerConfigurator $c): void
