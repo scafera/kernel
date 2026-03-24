@@ -159,7 +159,12 @@ class ScaferaKernel extends BaseKernel
 
     private function loadOverrides(ContainerConfigurator $c): void
     {
-        $file = $this->getProjectDir() . '/config/overrides.yaml';
+        $this->loadOverridesFromFile($c, $this->getProjectDir() . '/config/overrides.yaml');
+        $this->loadOverridesFromFile($c, $this->getProjectDir() . '/config/overrides.local.yaml');
+    }
+
+    private function loadOverridesFromFile(ContainerConfigurator $c, string $file): void
+    {
         if (!is_file($file)) {
             return;
         }

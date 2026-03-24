@@ -23,8 +23,12 @@ class Bootstrap
         $_SERVER['APP_ENV'] ??= $_ENV['APP_ENV'] ??= 'dev';
         $_SERVER['APP_DEBUG'] ??= $_ENV['APP_DEBUG'] ??= '1';
 
-        // Override defaults with overrides.yaml env: section (if present).
-        $file = $projectDir . '/config/overrides.yaml';
+        self::loadEnvFromFile($projectDir . '/config/overrides.yaml');
+        self::loadEnvFromFile($projectDir . '/config/overrides.local.yaml');
+    }
+
+    private static function loadEnvFromFile(string $file): void
+    {
         if (!is_file($file)) {
             return;
         }
