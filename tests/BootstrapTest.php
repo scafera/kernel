@@ -44,7 +44,7 @@ class BootstrapTest extends TestCase
         unset($_SERVER['APP_ENV'], $_SERVER['APP_DEBUG'], $_ENV['APP_ENV'], $_ENV['APP_DEBUG']);
 
         // Provide APP_SECRET so init doesn't throw
-        file_put_contents($this->tmpDir . '/config/overrides.yaml', "env:\n  APP_SECRET: test-secret\n");
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: test-secret\n");
 
         Bootstrap::init($this->tmpDir);
 
@@ -57,7 +57,7 @@ class BootstrapTest extends TestCase
         unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET']);
         putenv('APP_SECRET');
 
-        file_put_contents($this->tmpDir . '/config/overrides.yaml', "env:\n  APP_SECRET: my-secret\n");
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: my-secret\n");
 
         Bootstrap::init($this->tmpDir);
 
@@ -69,7 +69,7 @@ class BootstrapTest extends TestCase
         unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET']);
         putenv('APP_SECRET');
 
-        file_put_contents($this->tmpDir . '/config/overrides.yaml', "env:\n    APP_SECRET: my-secret\n");
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n    APP_SECRET: my-secret\n");
 
         Bootstrap::init($this->tmpDir);
 
@@ -81,7 +81,7 @@ class BootstrapTest extends TestCase
         putenv('APP_SECRET=from-os');
         $_SERVER['APP_SECRET'] = 'from-os';
 
-        file_put_contents($this->tmpDir . '/config/overrides.yaml', "env:\n  APP_SECRET: from-yaml\n");
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: from-yaml\n");
 
         Bootstrap::init($this->tmpDir);
 
@@ -95,7 +95,7 @@ class BootstrapTest extends TestCase
         unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET'], $_SERVER['SHOULD_NOT_EXIST'], $_ENV['SHOULD_NOT_EXIST']);
         putenv('APP_SECRET');
 
-        file_put_contents($this->tmpDir . '/config/overrides.yaml', "env:\n  APP_SECRET: secret\nframework:\n  SHOULD_NOT_EXIST: bad\n");
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: secret\nframework:\n  SHOULD_NOT_EXIST: bad\n");
 
         Bootstrap::init($this->tmpDir);
 

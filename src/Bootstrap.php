@@ -12,7 +12,7 @@ class Bootstrap
 
         if (!isset($_SERVER['APP_SECRET']) && !isset($_ENV['APP_SECRET'])) {
             throw new \RuntimeException(
-                'APP_SECRET is not set. Define it in config/overrides.yaml under the "env:" section, or set it as an OS environment variable.'
+                'APP_SECRET is not set. Define it in config/config.yaml under the "env:" section, or set it as an OS environment variable.'
             );
         }
     }
@@ -23,8 +23,8 @@ class Bootstrap
         $_SERVER['APP_ENV'] ??= $_ENV['APP_ENV'] ??= 'dev';
         $_SERVER['APP_DEBUG'] ??= $_ENV['APP_DEBUG'] ??= '1';
 
-        self::loadEnvFromFile($projectDir . '/config/overrides.yaml');
-        self::loadEnvFromFile($projectDir . '/config/overrides.local.yaml');
+        self::loadEnvFromFile($projectDir . '/config/config.yaml');
+        self::loadEnvFromFile($projectDir . '/config/config.local.yaml');
     }
 
     private static function loadEnvFromFile(string $file): void
