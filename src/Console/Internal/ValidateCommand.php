@@ -105,10 +105,10 @@ class ValidateCommand extends Command
 
             /** @var AdvisorInterface $advisor */
             $advisor = new $class();
-            $status = $advisor->canRun($this->projectDir);
+            $reason = $advisor->skipped($this->projectDir);
 
-            if (!$status->ready) {
-                $output->writeln('  <fg=yellow>⊘</> ' . $advisor->getName() . ' <fg=yellow>skipped</> (' . $status->reason . ')');
+            if ($reason !== null) {
+                $output->writeln('  <fg=yellow>⊘</> ' . $advisor->getName() . ' <fg=yellow>skipped</> (' . $reason . ')');
                 $hasOutput = true;
 
                 continue;
