@@ -116,17 +116,14 @@ class ValidateCommand extends Command
 
             $hints = $advisor->advise($this->projectDir);
 
-            if (!empty($hints)) {
-                $messages[] = $advisor->getName() . ':';
+            if (empty($hints)) {
+                $output->writeln('  <fg=blue>ℹ</> ' . $advisor->getName() . ' <fg=blue>ok</>');
+            } else {
+                $output->writeln('  <fg=blue>ℹ</> ' . $advisor->getName());
                 foreach ($hints as $hint) {
-                    $messages[] = '  · ' . $hint;
+                    $output->writeln('    · ' . $hint);
                 }
             }
-        }
-
-        if (!empty($messages)) {
-            $output->writeln('');
-            $output->note($messages);
         }
     }
 
