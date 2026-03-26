@@ -7,6 +7,7 @@ namespace Scafera\Kernel;
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Console\Internal\ValidateCommand;
 use Scafera\Kernel\DependencyInjection\ControllerBoundaryPass;
+use Scafera\Kernel\Validator\KernelStructureValidator;
 use Scafera\Kernel\Http\Internal\RequestResolver;
 use Scafera\Kernel\Http\Internal\ResponseListener;
 use Scafera\Kernel\Http\Internal\RouteLoader;
@@ -39,9 +40,33 @@ class ScaferaKernel extends BaseKernel
 
     protected function build(ContainerBuilder $container): void
     {
+        $this->checkForbiddenStructure();
+
         $container->addCompilerPass(
             new ControllerBoundaryPass($this->projectDir, $this->getArchitecturePackage()),
         );
+    }
+
+    private function checkForbiddenStructure(): void
+    {
+        $violations = [];
+
+        foreach (KernelStructureValidator::FORBIDDEN as $path => $rule) {
+            $full = $this->projectDir . '/' . $path;
+            $exists = $rule['type'] === 'file' ? is_file($full) : is_dir($full);
+
+            if ($exists) {
+                $violations[] = '  - ' . $path . ': ' . $rule['reason'];
+            }
+        }
+
+        if (!empty($violations)) {
+            throw new \LogicException(
+                "Scafera structure violation: forbidden files or directories detected.\n\n"
+                . implode("\n", $violations)
+                . "\n\nRemove these before continuing.",
+            );
+        }
     }
 
     public function registerBundles(): iterable

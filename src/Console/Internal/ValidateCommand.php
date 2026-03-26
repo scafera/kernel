@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel\Console\Internal;
 
+use Scafera\Kernel\Advisor\UploadLocationAdvisor;
 use Scafera\Kernel\Console\Attribute\AsCommand;
 use Scafera\Kernel\Console\Command;
 use Scafera\Kernel\Console\Input;
@@ -12,6 +13,7 @@ use Scafera\Kernel\Contract\AdvisorInterface;
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Contract\ValidatorInterface;
 use Scafera\Kernel\InstalledPackages;
+use Scafera\Kernel\Validator\KernelStructureValidator;
 
 #[AsCommand('validate', description: 'Validate project structure against architecture rules')]
 class ValidateCommand extends Command
@@ -24,29 +26,62 @@ class ValidateCommand extends Command
 
     protected function handle(Input $input, Output $output): int
     {
-        $architecture = $this->resolveArchitecture();
-
-        if ($architecture === null) {
-            $output->warning('No architecture package installed. Nothing to validate.');
-
-            return self::SUCCESS;
-        }
-
-        $output->writeln('<comment>Scafera Structure Validation (' . $architecture->getName() . ')</comment>');
+        $output->writeln('<comment>Scafera Structure Validation</comment>');
         $output->writeln('');
 
-        $validatorClasses = $architecture->getValidators();
-        if (empty($validatorClasses)) {
-            $output->info('Architecture package defines no validators.');
+        // Phase 1: Kernel checks (always run)
+        $output->writeln('<info>Kernel checks:</info>');
+        [$kernelPassed, $kernelFailed, $kernelViolations] = $this->runValidators(
+            $this->getKernelValidators(),
+            $output,
+        );
+        $this->runAdvisors($this->getKernelAdvisors(), $output);
+
+        // Phase 2: Architecture checks (if installed)
+        $architecture = $this->resolveArchitecture();
+        $archPassed = 0;
+        $archFailed = 0;
+        $archViolations = 0;
+
+        if ($architecture !== null) {
+            $output->writeln('');
+            $output->writeln('<info>' . $architecture->getName() . ' checks:</info>');
+            [$archPassed, $archFailed, $archViolations] = $this->runValidators(
+                $architecture->getValidators(),
+                $output,
+            );
+            $this->runAdvisors($this->getAdvisorInstances($architecture->getAdvisors()), $output);
+        }
+
+        // Summary
+        $totalPassed = $kernelPassed + $archPassed;
+        $totalFailed = $kernelFailed + $archFailed;
+        $totalViolations = $kernelViolations + $archViolations;
+
+        $output->writeln('');
+
+        if ($totalFailed === 0) {
+            $output->success($totalPassed . ' checks passed.');
 
             return self::SUCCESS;
         }
 
+        $output->error($totalFailed . ' check(s) failed, ' . $totalViolations . ' violation(s) found.');
+
+        return self::FAILURE;
+    }
+
+    /**
+     * @param list<string> $classes
+     * @return array{int, int, int} [passed, failed, violations]
+     */
+    private function runValidators(array $classes, Output $output): array
+    {
         $passed = 0;
         $failed = 0;
         $totalViolations = 0;
 
-        foreach ($validatorClasses as $class) {
+        foreach ($classes as $class) {
             if (!class_exists($class) || !is_subclass_of($class, ValidatorInterface::class)) {
                 $output->error('Invalid validator class: ' . $class);
                 $failed++;
@@ -72,45 +107,22 @@ class ValidateCommand extends Command
             }
         }
 
-        $this->runAdvisors($architecture, $output);
-
-        $output->writeln('');
-
-        if ($failed === 0) {
-            $output->success($passed . ' checks passed.');
-
-            return self::SUCCESS;
-        }
-
-        $output->error($failed . ' check(s) failed, ' . $totalViolations . ' violation(s) found.');
-
-        return self::FAILURE;
+        return [$passed, $failed, $totalViolations];
     }
 
-    private function runAdvisors(ArchitecturePackageInterface $architecture, Output $output): void
+    /**
+     * @param list<AdvisorInterface> $advisors
+     */
+    private function runAdvisors(array $advisors, Output $output): void
     {
-        $advisorClasses = $architecture->getAdvisors();
-        if (empty($advisorClasses)) {
+        if (empty($advisors)) {
             return;
         }
 
         $output->writeln('');
-        $messages = [];
-        $hasOutput = false;
 
-        foreach ($advisorClasses as $class) {
-            if (!class_exists($class) || !is_subclass_of($class, AdvisorInterface::class)) {
-                continue;
-            }
-
-            /** @var AdvisorInterface $advisor */
-            $advisor = new $class();
-            $reason = $advisor->skipped($this->projectDir);
-
-            if ($reason !== null) {
-                $output->writeln('  <fg=yellow>⊘</> ' . $advisor->getName() . ' <fg=yellow>skipped</> (' . $reason . ')');
-                $hasOutput = true;
-
+        foreach ($advisors as $advisor) {
+            if ($advisor->skipped($this->projectDir) !== null) {
                 continue;
             }
 
@@ -125,6 +137,39 @@ class ValidateCommand extends Command
                 }
             }
         }
+    }
+
+    /** @return list<string> */
+    private function getKernelValidators(): array
+    {
+        return [
+            KernelStructureValidator::class,
+        ];
+    }
+
+    /** @return list<AdvisorInterface> */
+    private function getKernelAdvisors(): array
+    {
+        return [
+            new UploadLocationAdvisor(),
+        ];
+    }
+
+    /**
+     * @param list<string> $classes
+     * @return list<AdvisorInterface>
+     */
+    private function getAdvisorInstances(array $classes): array
+    {
+        $advisors = [];
+
+        foreach ($classes as $class) {
+            if (class_exists($class) && is_subclass_of($class, AdvisorInterface::class)) {
+                $advisors[] = new $class();
+            }
+        }
+
+        return $advisors;
     }
 
     private function resolveArchitecture(): ?ArchitecturePackageInterface
