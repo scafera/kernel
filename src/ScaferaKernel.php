@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Scafera\Kernel;
 
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
+use Scafera\Kernel\Console\Internal\MakeCommand;
 use Scafera\Kernel\Console\Internal\ValidateCommand;
 use Scafera\Kernel\DependencyInjection\ControllerBoundaryPass;
 use Scafera\Kernel\Validator\KernelStructureValidator;
@@ -138,6 +139,11 @@ class ScaferaKernel extends BaseKernel
 
         $c->services()
             ->set(ValidateCommand::class)
+                ->args([
+                    $this->getProjectDir(),
+                ])
+                ->tag('console.command')
+            ->set(MakeCommand::class)
                 ->args([
                     $this->getProjectDir(),
                 ])
