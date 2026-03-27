@@ -20,6 +20,8 @@ use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
+
 class ScaferaKernel extends BaseKernel
 {
     use MicroKernelTrait;
@@ -141,6 +143,7 @@ class ScaferaKernel extends BaseKernel
             ->set(ValidateCommand::class)
                 ->args([
                     $this->getProjectDir(),
+                    tagged_iterator('scafera.validator'),
                 ])
                 ->tag('console.command')
             ->set(MakeCommand::class)

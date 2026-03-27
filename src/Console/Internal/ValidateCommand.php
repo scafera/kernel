@@ -18,8 +18,10 @@ use Scafera\Kernel\Validator\KernelStructureValidator;
 #[AsCommand('validate', description: 'Validate project structure against architecture rules')]
 class ValidateCommand extends Command
 {
+    /** @param iterable<ValidatorInterface> $packageValidators */
     public function __construct(
         private readonly string $projectDir,
+        private readonly iterable $packageValidators = [],
     ) {
         parent::__construct();
     }
@@ -53,10 +55,25 @@ class ValidateCommand extends Command
             $this->runAdvisors($this->getAdvisorInstances($architecture->getAdvisors()), $output);
         }
 
+        // Phase 3: Capability package checks (tagged validators)
+        $pkgPassed = 0;
+        $pkgFailed = 0;
+        $pkgViolations = 0;
+        $packageValidatorList = iterator_to_array($this->packageValidators);
+
+        if (!empty($packageValidatorList)) {
+            $output->writeln('');
+            $output->writeln('<info>Package checks:</info>');
+            [$pkgPassed, $pkgFailed, $pkgViolations] = $this->runValidatorInstances(
+                $packageValidatorList,
+                $output,
+            );
+        }
+
         // Summary
-        $totalPassed = $kernelPassed + $archPassed;
-        $totalFailed = $kernelFailed + $archFailed;
-        $totalViolations = $kernelViolations + $archViolations;
+        $totalPassed = $kernelPassed + $archPassed + $pkgPassed;
+        $totalFailed = $kernelFailed + $archFailed + $pkgFailed;
+        $totalViolations = $kernelViolations + $archViolations + $pkgViolations;
 
         $output->writeln('');
 
@@ -77,9 +94,8 @@ class ValidateCommand extends Command
      */
     private function runValidators(array $classes, Output $output): array
     {
-        $passed = 0;
+        $instances = [];
         $failed = 0;
-        $totalViolations = 0;
 
         foreach ($classes as $class) {
             if (!class_exists($class) || !is_subclass_of($class, ValidatorInterface::class)) {
@@ -89,25 +105,12 @@ class ValidateCommand extends Command
                 continue;
             }
 
-            /** @var ValidatorInterface $validator */
-            $validator = new $class();
-            $violations = $validator->validate($this->projectDir);
-
-            if (empty($violations)) {
-                $output->writeln('  <fg=green>✓</> ' . $validator->getName());
-                $passed++;
-            } else {
-                $output->writeln('  <fg=red>✗</> ' . $validator->getName() . ' <fg=red>FAILED</>');
-                foreach ($violations as $violation) {
-                    $output->writeln('    - ' . $violation);
-                }
-                $output->writeln('');
-                $failed++;
-                $totalViolations += count($violations);
-            }
+            $instances[] = new $class();
         }
 
-        return [$passed, $failed, $totalViolations];
+        [$passed, $instanceFailed, $violations] = $this->runValidatorInstances($instances, $output);
+
+        return [$passed, $failed + $instanceFailed, $violations];
     }
 
     /**
@@ -137,6 +140,36 @@ class ValidateCommand extends Command
                 }
             }
         }
+    }
+
+    /**
+     * @param list<ValidatorInterface> $validators
+     * @return array{int, int, int} [passed, failed, violations]
+     */
+    private function runValidatorInstances(array $validators, Output $output): array
+    {
+        $passed = 0;
+        $failed = 0;
+        $totalViolations = 0;
+
+        foreach ($validators as $validator) {
+            $violations = $validator->validate($this->projectDir);
+
+            if (empty($violations)) {
+                $output->writeln('  <fg=green>✓</> ' . $validator->getName());
+                $passed++;
+            } else {
+                $output->writeln('  <fg=red>✗</> ' . $validator->getName() . ' <fg=red>FAILED</>');
+                foreach ($violations as $violation) {
+                    $output->writeln('    - ' . $violation);
+                }
+                $output->writeln('');
+                $failed++;
+                $totalViolations += count($violations);
+            }
+        }
+
+        return [$passed, $failed, $totalViolations];
     }
 
     /** @return list<string> */
