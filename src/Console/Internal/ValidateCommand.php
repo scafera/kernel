@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel\Console\Internal;
 
-use Scafera\Kernel\Advisor\UploadLocationAdvisor;
 use Scafera\Kernel\Console\Attribute\AsCommand;
 use Scafera\Kernel\Console\Command;
 use Scafera\Kernel\Console\Input;
@@ -183,9 +182,7 @@ class ValidateCommand extends Command
     /** @return list<AdvisorInterface> */
     private function getKernelAdvisors(): array
     {
-        return [
-            new UploadLocationAdvisor(),
-        ];
+        return [];
     }
 
     /**
