@@ -39,7 +39,8 @@ class InstalledPackages
                 $pkgDir = realpath($projectDir . '/vendor/composer/' . ($pkg['install-path'] ?? ''));
                 if ($pkgDir) {
                     foreach ($pkg['autoload']['psr-4'] ?? [] as $ns => $path) {
-                        foreach (glob($pkgDir . '/' . $path . '*Bundle.php') as $file) {
+                        $searchDir = rtrim($pkgDir . '/' . $path, '/');
+                        foreach (glob($searchDir . '/*Bundle.php') as $file) {
                             $bundles[] = $ns . basename($file, '.php');
                         }
                     }
