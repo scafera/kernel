@@ -42,7 +42,7 @@ class ScaferaApplication extends Application
 
         if (!$this->symfonyPassthrough) {
             $name = $input->getFirstArgument();
-            if ($name && str_contains($name, ':') && !str_starts_with($name, 'app:') && !$this->isPromoted($name)) {
+            if ($name && str_contains($name, ':') && !str_starts_with($name, 'app:') && !$this->isPromoted($name) && !$this->isScaferaCommand($name)) {
                 throw new CommandNotFoundException(
                     sprintf('Command "%s" is a Symfony command. Run "scafera symfony %s" to use it.', $name, $name)
                 );
@@ -77,7 +77,11 @@ class ScaferaApplication extends Application
 
         $filtered = array_filter($commands, function (Command $command) {
             $name = $command->getName();
-            return !str_contains($name, ':') || str_starts_with($name, 'app:') || $this->isPromoted($name);
+            if (!str_contains($name, ':') || str_starts_with($name, 'app:') || $this->isPromoted($name)) {
+                return true;
+            }
+            // Allow commands from Scafera packages (they extend Scafera\Kernel\Console\Command)
+            return $command instanceof \Scafera\Kernel\Console\Command;
         });
 
         // Add aliased commands to the list under their Scafera names
@@ -109,5 +113,15 @@ class ScaferaApplication extends Application
     private function isPromoted(string $name): bool
     {
         return array_key_exists($name, self::PROMOTED_COMMANDS);
+    }
+
+    private function isScaferaCommand(string $name): bool
+    {
+        try {
+            $command = parent::find($name);
+            return $command instanceof \Scafera\Kernel\Console\Command;
+        } catch (CommandNotFoundException) {
+            return false;
+        }
     }
 }
