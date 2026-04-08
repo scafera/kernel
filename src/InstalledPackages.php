@@ -59,7 +59,7 @@ class InstalledPackages
     {
         $dir = dirname($cachePath);
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0755, true);
         }
 
         file_put_contents($cachePath, '<?php return ' . var_export($result, true) . ';' . "\n");

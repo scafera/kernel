@@ -42,7 +42,8 @@ class Bootstrap
 
             if ($inEnvSection && preg_match('/^\s+(\w+):\s*(.+)$/', $line, $m)) {
                 $key = $m[1];
-                $value = trim($m[2], " '\"");
+                $value = preg_replace('/\s*#.*$/', '', $m[2]);
+                $value = trim($value, " '\"");
 
                 // Real OS env vars always win.
                 if (getenv($key) !== false) {
