@@ -113,14 +113,36 @@ final class RouteLoader
     private static function extractClassName(string $file): ?string
     {
         $contents = file_get_contents($file);
+        $tokens = token_get_all($contents);
         $namespace = null;
         $class = null;
 
-        if (preg_match('/namespace\s+([^;]+);/', $contents, $m)) {
-            $namespace = $m[1];
-        }
-        if (preg_match('/\b(?:class|enum)\s+(\w+)/', $contents, $m)) {
-            $class = $m[1];
+        $count = count($tokens);
+        for ($i = 0; $i < $count; $i++) {
+            if (!is_array($tokens[$i])) {
+                continue;
+            }
+
+            if ($tokens[$i][0] === T_NAMESPACE) {
+                $namespace = '';
+                for ($j = $i + 1; $j < $count; $j++) {
+                    if ($tokens[$j] === ';' || $tokens[$j] === '{') {
+                        break;
+                    }
+                    if (is_array($tokens[$j]) && in_array($tokens[$j][0], [T_NAME_QUALIFIED, T_STRING], true)) {
+                        $namespace .= $tokens[$j][1];
+                    }
+                }
+            }
+
+            if (in_array($tokens[$i][0], [T_CLASS, T_ENUM], true)) {
+                for ($j = $i + 1; $j < $count; $j++) {
+                    if (is_array($tokens[$j]) && $tokens[$j][0] === T_STRING) {
+                        $class = $tokens[$j][1];
+                        break 2;
+                    }
+                }
+            }
         }
 
         if ($namespace !== null && $class !== null) {
