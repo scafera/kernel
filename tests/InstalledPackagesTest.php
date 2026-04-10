@@ -112,6 +112,27 @@ class InstalledPackagesTest extends TestCase
         $this->assertSame(['Test\\MyBundle\\MyTestBundle'], $result['bundles']);
     }
 
+    public function testThrowsOnMultipleArchitecturePackages(): void
+    {
+        $this->writeInstalledJson([
+            [
+                'name' => 'scafera/layered',
+                'type' => 'library',
+                'extra' => ['scafera-architecture' => 'Scafera\\Layered\\LayeredArchitecture'],
+            ],
+            [
+                'name' => 'scafera/hexagonal',
+                'type' => 'library',
+                'extra' => ['scafera-architecture' => 'Scafera\\Hexagonal\\HexagonalArchitecture'],
+            ],
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Multiple Scafera architecture packages detected: scafera/layered, scafera/hexagonal');
+
+        InstalledPackages::get($this->tmpDir);
+    }
+
     private function writeInstalledJson(array $packages): void
     {
         // Clear cache so parse() runs

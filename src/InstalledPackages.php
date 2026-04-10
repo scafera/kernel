@@ -32,7 +32,7 @@ class InstalledPackages
             return ['bundles' => [], 'architecture' => null];
         }
         $bundles = [];
-        $architecture = null;
+        $architecturePackages = [];
 
         foreach ($installed['packages'] ?? [] as $pkg) {
             if (($pkg['type'] ?? '') === 'symfony-bundle' && $pkg['name'] !== 'symfony/framework-bundle') {
@@ -47,10 +47,19 @@ class InstalledPackages
                 }
             }
 
-            if (!$architecture && isset($pkg['extra']['scafera-architecture'])) {
-                $architecture = $pkg['extra']['scafera-architecture'];
+            if (isset($pkg['extra']['scafera-architecture'])) {
+                $architecturePackages[$pkg['name']] = $pkg['extra']['scafera-architecture'];
             }
         }
+
+        if (\count($architecturePackages) > 1) {
+            throw new \RuntimeException(sprintf(
+                'Multiple Scafera architecture packages detected: %s. Only one architecture package may be installed at a time.',
+                implode(', ', array_keys($architecturePackages))
+            ));
+        }
+
+        $architecture = $architecturePackages ? reset($architecturePackages) : null;
 
         return ['bundles' => $bundles, 'architecture' => $architecture];
     }
