@@ -24,7 +24,7 @@ final class ResponseListener implements EventSubscriberInterface
         $result = $event->getControllerResult();
 
         if ($result instanceof Response) {
-            $event->setResponse($result->toSymfonyResponse());
+            $event->setResponse(ResponseConverter::toSymfony($result));
         }
     }
 }

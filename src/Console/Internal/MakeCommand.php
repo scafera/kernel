@@ -139,12 +139,7 @@ class MakeCommand extends Command
     {
         $generators = [];
 
-        foreach ($architecture->getGenerators() as $class) {
-            if (!class_exists($class) || !is_subclass_of($class, GeneratorInterface::class)) {
-                continue;
-            }
-
-            $generator = new $class();
+        foreach ($architecture->getGenerators() as $generator) {
             $generators[$generator->getName()] = $generator;
         }
 

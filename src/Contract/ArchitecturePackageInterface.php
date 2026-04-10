@@ -19,12 +19,12 @@ interface ArchitecturePackageInterface
     /** @return array<string, string> Folder path => description */
     public function getStructure(): array;
 
-    /** @return list<string> Validator class names */
+    /** @return list<ValidatorInterface> Validator instances */
     public function getValidators(): array;
 
-    /** @return list<string> Generator class names */
+    /** @return list<GeneratorInterface> Generator instances */
     public function getGenerators(): array;
 
-    /** @return list<string> Advisor class names (warnings, never block) */
+    /** @return list<AdvisorInterface> Advisor instances (warnings, never block) */
     public function getAdvisors(): array;
 }

@@ -17,7 +17,12 @@ abstract class WebTestCase extends SymfonyWebTestCase
         parent::tearDown();
     }
 
-    protected function client(): KernelBrowser
+    /**
+     * @internal Returns the Symfony browser client. This method is internal
+     * infrastructure and should not be called directly from user tests.
+     * Use get(), post(), put(), patch(), delete() methods instead.
+     */
+    private function client(): KernelBrowser
     {
         if ($this->browser === null) {
             $this->browser = static::createClient();

@@ -26,9 +26,9 @@ class Response
         return (string) $this->symfonyResponse->getContent();
     }
 
-    /** @internal Used by the kernel to convert to a Symfony response. */
-    public function toSymfonyResponse(): SymfonyResponse
+    /** @return array<string, list<string|null>> */
+    public function getHeaders(): array
     {
-        return $this->symfonyResponse;
+        return $this->symfonyResponse->headers->all();
     }
 }

@@ -32,7 +32,7 @@ class ValidateCommand extends Command
 
         // Phase 1: Kernel checks (always run)
         $output->writeln('<info>Kernel checks:</info>');
-        [$kernelPassed, $kernelFailed, $kernelViolations] = $this->runValidators(
+        [$kernelPassed, $kernelFailed, $kernelViolations] = $this->runValidatorInstances(
             $this->getKernelValidators(),
             $output,
         );
@@ -47,11 +47,11 @@ class ValidateCommand extends Command
         if ($architecture !== null) {
             $output->writeln('');
             $output->writeln('<info>' . $architecture->getName() . ' checks:</info>');
-            [$archPassed, $archFailed, $archViolations] = $this->runValidators(
+            [$archPassed, $archFailed, $archViolations] = $this->runValidatorInstances(
                 $architecture->getValidators(),
                 $output,
             );
-            $this->runAdvisors($this->getAdvisorInstances($architecture->getAdvisors()), $output);
+            $this->runAdvisors($architecture->getAdvisors(), $output);
         }
 
         // Phase 3: Capability package checks (tagged validators)
@@ -85,31 +85,6 @@ class ValidateCommand extends Command
         $output->error($totalFailed . ' check(s) failed, ' . $totalViolations . ' violation(s) found.');
 
         return self::FAILURE;
-    }
-
-    /**
-     * @param list<string> $classes
-     * @return array{int, int, int} [passed, failed, violations]
-     */
-    private function runValidators(array $classes, Output $output): array
-    {
-        $instances = [];
-        $failed = 0;
-
-        foreach ($classes as $class) {
-            if (!class_exists($class) || !is_subclass_of($class, ValidatorInterface::class)) {
-                $output->error('Invalid validator class: ' . $class);
-                $failed++;
-
-                continue;
-            }
-
-            $instances[] = new $class();
-        }
-
-        [$passed, $instanceFailed, $violations] = $this->runValidatorInstances($instances, $output);
-
-        return [$passed, $failed + $instanceFailed, $violations];
     }
 
     /**
@@ -171,11 +146,11 @@ class ValidateCommand extends Command
         return [$passed, $failed, $totalViolations];
     }
 
-    /** @return list<string> */
+    /** @return list<ValidatorInterface> */
     private function getKernelValidators(): array
     {
         return [
-            KernelStructureValidator::class,
+            new KernelStructureValidator(),
         ];
     }
 
@@ -183,23 +158,6 @@ class ValidateCommand extends Command
     private function getKernelAdvisors(): array
     {
         return [];
-    }
-
-    /**
-     * @param list<string> $classes
-     * @return list<AdvisorInterface>
-     */
-    private function getAdvisorInstances(array $classes): array
-    {
-        $advisors = [];
-
-        foreach ($classes as $class) {
-            if (class_exists($class) && is_subclass_of($class, AdvisorInterface::class)) {
-                $advisors[] = new $class();
-            }
-        }
-
-        return $advisors;
     }
 
     private function resolveArchitecture(): ?ArchitecturePackageInterface
