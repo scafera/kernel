@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel\Http\Internal;
 
-use Scafera\Kernel\Http\Response;
+use Scafera\Kernel\Http\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
@@ -12,14 +12,14 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
  *
  * This class exists to enforce the boundary between Scafera's HTTP abstraction
  * and Symfony's internals. Userland code cannot access Symfony responses directly
- * because Response has no escape hatch method.
+ * because Response classes are final with private internals.
  *
  * The conversion is explicit: we construct a new Symfony response from the
  * public getters (content, status, headers) rather than accessing internals.
  */
 final class ResponseConverter
 {
-    public static function toSymfony(Response $response): SymfonyResponse
+    public static function toSymfony(ResponseInterface $response): SymfonyResponse
     {
         return new SymfonyResponse(
             $response->getContent(),

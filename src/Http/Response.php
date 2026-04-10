@@ -6,10 +6,9 @@ namespace Scafera\Kernel\Http;
 
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
-class Response
+final class Response implements ResponseInterface
 {
-    /** @internal */
-    protected SymfonyResponse $symfonyResponse;
+    private readonly SymfonyResponse $symfonyResponse;
 
     public function __construct(string $content = '', int $status = 200, array $headers = [])
     {

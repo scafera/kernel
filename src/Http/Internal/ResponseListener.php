@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel\Http\Internal;
 
-use Scafera\Kernel\Http\Response;
+use Scafera\Kernel\Http\ResponseInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -23,7 +23,7 @@ final class ResponseListener implements EventSubscriberInterface
     {
         $result = $event->getControllerResult();
 
-        if ($result instanceof Response) {
+        if ($result instanceof ResponseInterface) {
             $event->setResponse(ResponseConverter::toSymfony($result));
         }
     }
