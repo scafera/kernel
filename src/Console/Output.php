@@ -64,6 +64,11 @@ final class Output
         $this->io->table($headers, $rows);
     }
 
+    public function confirm(string $question, bool $default = true): bool
+    {
+        return $this->io->confirm($question, $default);
+    }
+
     public function isVerbose(): bool
     {
         return $this->io->isVerbose();
