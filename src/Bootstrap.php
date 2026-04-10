@@ -42,7 +42,7 @@ class Bootstrap
 
             if ($inEnvSection && preg_match('/^\s+(\w+):\s*(.+)$/', $line, $m)) {
                 $key = $m[1];
-                $value = preg_replace('/\s*#.*$/', '', $m[2]);
+                $value = self::stripInlineComment($m[2]);
                 $value = trim($value, " '\"");
 
                 // Real OS env vars always win.
@@ -56,5 +56,24 @@ class Bootstrap
                 break;
             }
         }
+    }
+
+    private static function stripInlineComment(string $value): string
+    {
+        $trimmed = ltrim($value);
+
+        // Quoted values: skip past the closing quote, then strip comments after it.
+        if (isset($trimmed[0]) && ($trimmed[0] === '"' || $trimmed[0] === "'")) {
+            $quote = $trimmed[0];
+            $end = strpos($trimmed, $quote, 1);
+            if ($end !== false) {
+                $after = substr($trimmed, $end + 1);
+                $after = preg_replace('/\s+#.*$/', '', $after);
+                return substr($trimmed, 0, $end + 1) . $after;
+            }
+        }
+
+        // Unquoted values: only strip # when preceded by whitespace.
+        return preg_replace('/\s+#.*$/', '', $value);
     }
 }

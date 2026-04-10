@@ -103,6 +103,55 @@ class BootstrapTest extends TestCase
         $this->assertArrayNotHasKey('SHOULD_NOT_EXIST', $_SERVER);
     }
 
+    public function testStripsInlineComments(): void
+    {
+        unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET'], $_SERVER['MY_VAR'], $_ENV['MY_VAR']);
+        putenv('APP_SECRET');
+
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: secret\n  MY_VAR: value # this is a comment\n");
+
+        Bootstrap::init($this->tmpDir);
+
+        $this->assertSame('value', $_SERVER['MY_VAR']);
+    }
+
+    public function testPreservesHashInUrls(): void
+    {
+        unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET'], $_SERVER['MY_URL'], $_ENV['MY_URL']);
+        putenv('APP_SECRET');
+        putenv('MY_URL');
+
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: secret\n  MY_URL: mysql://host/db#fragment\n");
+
+        Bootstrap::init($this->tmpDir);
+
+        $this->assertSame('mysql://host/db#fragment', $_SERVER['MY_URL']);
+    }
+
+    public function testPreservesHashInQuotedValues(): void
+    {
+        unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET'], $_SERVER['MY_DESC'], $_ENV['MY_DESC']);
+        putenv('APP_SECRET');
+
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: secret\n  MY_DESC: \"My App # Best\"\n");
+
+        Bootstrap::init($this->tmpDir);
+
+        $this->assertSame('My App # Best', $_SERVER['MY_DESC']);
+    }
+
+    public function testQuotedValueWithTrailingComment(): void
+    {
+        unset($_SERVER['APP_SECRET'], $_ENV['APP_SECRET'], $_SERVER['MY_DESC'], $_ENV['MY_DESC']);
+        putenv('APP_SECRET');
+
+        file_put_contents($this->tmpDir . '/config/config.yaml', "env:\n  APP_SECRET: secret\n  MY_DESC: \"quoted\" # comment\n");
+
+        Bootstrap::init($this->tmpDir);
+
+        $this->assertSame('quoted', $_SERVER['MY_DESC']);
+    }
+
     private function removeDir(string $dir): void
     {
         if (!is_dir($dir)) {
