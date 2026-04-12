@@ -6,6 +6,7 @@ namespace Scafera\Kernel;
 
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Console\Internal\MakeCommand;
+use Symfony\Component\DependencyInjection\Definition;
 use Scafera\Kernel\Console\Internal\ValidateCommand;
 use Scafera\Kernel\DependencyInjection\ControllerBoundaryPass;
 use Scafera\Kernel\Validator\KernelStructureValidator;
@@ -48,6 +49,8 @@ class ScaferaKernel extends BaseKernel
         $container->addCompilerPass(
             new ControllerBoundaryPass($this->projectDir, $this->getArchitecturePackage()),
         );
+
+        $this->registerGeneratorCommands($container);
     }
 
     private function checkForbiddenStructure(): void
@@ -145,12 +148,24 @@ class ScaferaKernel extends BaseKernel
                     $this->getProjectDir(),
                     tagged_iterator('scafera.validator'),
                 ])
-                ->tag('console.command')
-            ->set(MakeCommand::class)
-                ->args([
-                    $this->getProjectDir(),
-                ])
                 ->tag('console.command');
+    }
+
+    private function registerGeneratorCommands(ContainerBuilder $container): void
+    {
+        $architecture = $this->getArchitecturePackage();
+        if (!$architecture) {
+            return;
+        }
+
+        $projectDir = $this->getProjectDir();
+
+        foreach ($architecture->getGenerators() as $generator) {
+            $definition = new Definition(MakeCommand::class);
+            $definition->setArguments([$projectDir, $generator::class]);
+            $definition->addTag('console.command', ['command' => 'make:' . $generator->getName()]);
+            $container->setDefinition('scafera.make.' . $generator->getName(), $definition);
+        }
     }
 
     private function loadArchitectureServices(ContainerConfigurator $c): void

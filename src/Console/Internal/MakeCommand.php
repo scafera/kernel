@@ -4,66 +4,38 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel\Console\Internal;
 
-use Scafera\Kernel\Console\Attribute\AsCommand;
 use Scafera\Kernel\Console\Command;
 use Scafera\Kernel\Console\Input;
 use Scafera\Kernel\Console\Output;
-use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Contract\GeneratorInterface;
 use Scafera\Kernel\Generator\FileWriter;
-use Scafera\Kernel\InstalledPackages;
 
-#[AsCommand('make', description: 'Generate project files')]
 class MakeCommand extends Command
 {
+    private readonly GeneratorInterface $generator;
+
+    /**
+     * @param class-string<GeneratorInterface> $generatorClass
+     */
     public function __construct(
         private readonly string $projectDir,
+        string $generatorClass,
     ) {
-        parent::__construct();
+        $this->generator = new $generatorClass();
 
-        $this->addArg('type', 'Generator type (e.g. controller, service)', required: false);
-        $this->addArg('name', 'Name of the file to generate', required: false);
+        parent::__construct('make:' . $this->generator->getName());
+
+        $this->setDescription($this->generator->getDescription());
+        $this->addArg('name', 'Name of the file to generate (e.g. ImportUsers, Order/Create)');
     }
 
     protected function handle(Input $input, Output $output): int
     {
-        $architecture = InstalledPackages::resolveArchitecture($this->projectDir);
-
-        if ($architecture === null) {
-            $output->error('No architecture package installed. Generators require an architecture package.');
-
-            return self::FAILURE;
-        }
-
-        $generators = $this->resolveGenerators($architecture);
-
-        $type = $input->argument('type');
-
-        if (!$type) {
-            return $this->listGenerators($generators, $architecture, $output);
-        }
-
-        $generator = $generators[$type] ?? null;
-
-        if ($generator === null) {
-            $available = implode(', ', array_keys($generators));
-            $output->error("Unknown generator '{$type}'. Available: {$available}");
-
-            return self::FAILURE;
-        }
-
         $name = $input->argument('name');
-
-        if (!$name) {
-            $output->error("The 'name' argument is required. Usage: scafera make {$type} <name>");
-
-            return self::FAILURE;
-        }
 
         $inputs = ['name' => $name];
 
-        // Validate required inputs beyond 'name'
-        foreach ($generator->getInputs() as $generatorInput) {
+        foreach ($this->generator->getInputs() as $generatorInput) {
             if ($generatorInput->name === 'name') {
                 continue;
             }
@@ -80,7 +52,7 @@ class MakeCommand extends Command
         }
 
         $writer = new FileWriter();
-        $result = $generator->generate($this->projectDir, $inputs, $writer);
+        $result = $this->generator->generate($this->projectDir, $inputs, $writer);
 
         if (empty($result->filesCreated)) {
             foreach ($result->messages as $message) {
@@ -106,43 +78,5 @@ class MakeCommand extends Command
         $output->success(count($result->filesCreated) . ' file(s) created.');
 
         return self::SUCCESS;
-    }
-
-    /**
-     * @param array<string, GeneratorInterface> $generators
-     */
-    private function listGenerators(array $generators, ArchitecturePackageInterface $architecture, Output $output): int
-    {
-        $output->writeln('<comment>Available generators (' . $architecture->getName() . ')</comment>');
-        $output->writeln('');
-
-        if (empty($generators)) {
-            $output->info('No generators defined by this architecture.');
-
-            return self::SUCCESS;
-        }
-
-        foreach ($generators as $generator) {
-            $output->writeln('  <fg=green>' . $generator->getName() . '</> — ' . $generator->getDescription());
-        }
-
-        $output->writeln('');
-        $output->writeln('Usage: scafera make <type> <name>');
-
-        return self::SUCCESS;
-    }
-
-    /**
-     * @return array<string, GeneratorInterface>
-     */
-    private function resolveGenerators(ArchitecturePackageInterface $architecture): array
-    {
-        $generators = [];
-
-        foreach ($architecture->getGenerators() as $generator) {
-            $generators[$generator->getName()] = $generator;
-        }
-
-        return $generators;
     }
 }

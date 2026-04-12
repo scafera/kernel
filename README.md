@@ -37,7 +37,7 @@ The kernel defines contracts that architecture and capability packages implement
 | `ArchitecturePackageInterface` | Defines an architecture package |
 | `ValidatorInterface` | Hard validation rule (affects exit code) |
 | `AdvisorInterface` | Soft advisory check (never affects exit code) |
-| `GeneratorInterface` | Code generator for `scafera make` command |
+| `GeneratorInterface` | Code generator for `scafera make:*` commands |
 | `ViewInterface` | Template rendering (implemented by `scafera/frontend`) |
 
 ## HTTP types
