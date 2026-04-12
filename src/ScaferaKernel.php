@@ -177,16 +177,26 @@ class ScaferaKernel extends BaseKernel
 
         $projectDir = $this->getProjectDir();
         $discovery = $architecture->getServiceDiscovery($projectDir);
+        $resourceDir = $projectDir . '/' . $discovery['resource'];
+
+        if (!is_dir($resourceDir)) {
+            return;
+        }
+
         $services = $c->services()->defaults()->autowire()->autoconfigure();
-        $services->load($discovery['namespace'], $projectDir . '/' . $discovery['resource'])
+        $services->load($discovery['namespace'], $resourceDir)
             ->exclude(array_map(fn($e) => $projectDir . '/' . $e, $discovery['exclude']));
 
         // Tag controller services so Symfony can resolve their dependencies.
         foreach ($architecture->getControllerPaths() as $path) {
+            $controllerDir = $projectDir . '/' . $path;
+            if (!is_dir($controllerDir)) {
+                continue;
+            }
             $ns = $this->pathToNamespace($discovery['namespace'], $discovery['resource'], $path);
             if ($ns !== null) {
                 $c->services()->defaults()->autowire()->autoconfigure()
-                    ->load($ns, $projectDir . '/' . $path)
+                    ->load($ns, $controllerDir)
                     ->tag('controller.service_arguments');
             }
         }
