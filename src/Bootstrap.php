@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel;
 
-class Bootstrap
+final class Bootstrap
 {
     public static function init(string $projectDir): void
     {

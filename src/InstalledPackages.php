@@ -6,7 +6,7 @@ namespace Scafera\Kernel;
 
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 
-class InstalledPackages
+final class InstalledPackages
 {
     public static function get(string $projectDir): array
     {

@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
-class ScaferaApplication extends Application
+final class ScaferaApplication extends Application
 {
     private bool $symfonyPassthrough = false;
 
