@@ -8,7 +8,7 @@ use Scafera\Kernel\Contract\ValidatorInterface;
 
 final class KernelStructureValidator implements ValidatorInterface
 {
-    private const REQUIRED = [
+    public const REQUIRED = [
         'composer.json' => 'file',
         'src' => 'dir',
         'public' => 'dir',
@@ -23,10 +23,6 @@ final class KernelStructureValidator implements ValidatorInterface
         'src/Kernel.php' => [
             'type' => 'file',
             'reason' => 'Scafera provides its own kernel. Remove src/Kernel.php.',
-        ],
-        'public/index.php' => [
-            'type' => 'file',
-            'reason' => 'Scafera provides the front controller. Remove public/index.php.',
         ],
     ];
 

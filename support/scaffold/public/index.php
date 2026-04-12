@@ -2,12 +2,9 @@
 
 declare(strict_types=1);
 
-$projectDir = dirname(__DIR__, 4);
-if (!is_file($projectDir . '/vendor/autoload_runtime.php')) {
-    $projectDir = getcwd();
-}
+$projectDir = dirname(__DIR__);
 
-require_once dirname(__DIR__) . '/src/Bootstrap.php';
+require_once $projectDir . '/vendor/scafera/kernel/src/Bootstrap.php';
 \Scafera\Kernel\Bootstrap::init($projectDir);
 
 require $projectDir . '/vendor/autoload_runtime.php';

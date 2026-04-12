@@ -82,16 +82,6 @@ class KernelStructureValidatorTest extends TestCase
         $this->assertStringContainsString('Kernel.php', $violations[0]);
     }
 
-    public function testFailsWhenPublicIndexPhpExists(): void
-    {
-        $this->createValidStructure();
-        file_put_contents($this->tmpDir . '/public/index.php', '<?php echo "hello";');
-
-        $violations = $this->validator->validate($this->tmpDir);
-        $this->assertCount(1, $violations);
-        $this->assertStringContainsString('front controller', $violations[0]);
-    }
-
     public function testName(): void
     {
         $this->assertSame('Kernel structure', $this->validator->getName());

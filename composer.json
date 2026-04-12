@@ -22,5 +22,16 @@
             "Scafera\\Kernel\\Tests\\": "tests/"
         }
     },
-    "bin": ["bin/scafera"]
+    "bin": ["bin/scafera"],
+    "extra": {
+        "scafera-scaffold": {
+            "files": {
+                "config/config.example.yaml": "support/scaffold/config/config.example.yaml",
+                "index.php": "support/scaffold/public/index.php"
+            },
+            "initial-files": {
+                "config/config.yaml": "support/scaffold/config/config.example.yaml"
+            }
+        }
+    }
 }
