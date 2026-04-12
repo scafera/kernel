@@ -67,10 +67,12 @@ class InstalledPackages
     private static function writeCache(string $cachePath, array $result): void
     {
         $dir = dirname($cachePath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new \RuntimeException(sprintf('Unable to create cache directory: %s', $dir));
         }
 
-        file_put_contents($cachePath, '<?php return ' . var_export($result, true) . ';' . "\n");
+        if (file_put_contents($cachePath, '<?php return ' . var_export($result, true) . ';' . "\n") === false) {
+            throw new \RuntimeException(sprintf('Unable to write cache file: %s', $cachePath));
+        }
     }
 }
