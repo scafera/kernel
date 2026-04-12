@@ -4,6 +4,8 @@ Scafera Kernel is the execution core of the Scafera framework. It provides a min
 
 It treats Symfony as a dependency — user projects contain only business logic.
 
+Scafera is opinionated by design — it enforces boundaries, limits configuration surface, and removes decisions that don't belong to application developers. The goal is a framework that is predictable and hard to misuse.
+
 ## Headless by design
 
 The kernel is intentionally non-functional without an architecture package. Without one:
@@ -27,6 +29,46 @@ Install an architecture package (e.g. `scafera/layered`) to define structure, be
 - **Explicit execution** — no hidden or implicit behavior in userland
 - **Separation of concerns** — runtime and architecture are independent
 - **Extensibility through contracts** — behavior is defined by implementing packages
+
+## How it works
+
+### Dynamic bundle discovery
+
+Bundles are discovered automatically from Composer's `installed.json`. Any installed package declaring `"type": "symfony-bundle"` is registered at boot — no `config/bundles.php` needed.
+
+- Install a capability package and its bundle is available
+- Remove a package and its bundle disappears
+- `composer install --no-dev` naturally excludes dev bundles
+
+### Configuration
+
+User configuration goes in a single optional file:
+
+```
+config/config.yaml
+```
+
+This file can override any bundle configuration and set environment variables:
+
+```yaml
+env:
+  APP_SECRET: your-secret-here
+
+framework:
+  session:
+    cookie_secure: true
+```
+
+There is no `config/packages/` directory — the kernel does not scan for it.
+
+### Environment bootstrap
+
+The `Bootstrap` class handles environment setup before the Symfony runtime takes over:
+
+1. Sets `APP_ENV` and `APP_DEBUG` defaults (`dev` / `1`)
+2. Reads the `env:` section from `config/config.yaml` if present
+3. Real OS environment variables always take precedence
+4. Validates that `APP_SECRET` is set
 
 ## Contracts
 
@@ -55,6 +97,24 @@ Controllers use these types instead of Symfony's HTTP classes directly. The `Con
 | `Scafera\Kernel\Http\HeaderBag` | Request headers (case-insensitive) |
 
 All types live in `Scafera\Kernel\Http\`.
+
+### Console
+
+| Type | Purpose |
+|------|---------|
+| `Scafera\Kernel\Console\Command` | Base command class with `handle()` method |
+| `Scafera\Kernel\Console\Input` | Command input wrapper |
+| `Scafera\Kernel\Console\Output` | Command output wrapper with `success()`, `error()`, `warning()` |
+| `Scafera\Kernel\Console\Attribute\AsCommand` | `#[AsCommand]` attribute |
+
+### Testing
+
+| Type | Purpose |
+|------|---------|
+| `Scafera\Kernel\Test\WebTestCase` | HTTP test base with `get()`, `post()`, etc. |
+| `Scafera\Kernel\Test\TestResponse` | Fluent assertions: `assertOk()`, `assertJsonPath()`, etc. |
+| `Scafera\Kernel\Test\CommandTestCase` | Console test base |
+| `Scafera\Kernel\Test\CommandResult` | Command output assertions |
 
 ### Example controller
 
@@ -129,14 +189,21 @@ Class-level `#[Route]` sets a prefix for method-level routes. A class-level `#[R
 - `has(string $key): bool`
 - `all(): array`
 
-## CLI
+## Built-in commands
 
 ```bash
-vendor/bin/scafera                    # Scafera commands
-vendor/bin/scafera validate           # Validate project against architecture rules
-vendor/bin/scafera about              # Show framework info
+vendor/bin/scafera validate           # Run validators from the installed architecture package
+vendor/bin/scafera about              # Show framework and environment information
 vendor/bin/scafera symfony            # All Symfony commands
 ```
+
+## What the kernel does NOT own
+
+- **Folder conventions** — defined by architecture packages
+- **Twig / presentation** — `scafera/frontend`
+- **Generators and validators** — architecture packages + `scafera/tools`
+- **Profiler / debug toolbar** — `scafera/profiler`
+- **Business logic** — your project
 
 ## Requirements
 
