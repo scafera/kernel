@@ -9,7 +9,6 @@ use Scafera\Kernel\Console\Command;
 use Scafera\Kernel\Console\Input;
 use Scafera\Kernel\Console\Output;
 use Scafera\Kernel\Contract\AdvisorInterface;
-use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Contract\ValidatorInterface;
 use Scafera\Kernel\InstalledPackages;
 use Scafera\Kernel\Validator\KernelStructureValidator;
@@ -39,7 +38,7 @@ class ValidateCommand extends Command
         $this->runAdvisors($this->getKernelAdvisors(), $output);
 
         // Phase 2: Architecture checks (if installed)
-        $architecture = $this->resolveArchitecture();
+        $architecture = InstalledPackages::resolveArchitecture($this->projectDir);
         $archPassed = 0;
         $archFailed = 0;
         $archViolations = 0;
@@ -158,17 +157,5 @@ class ValidateCommand extends Command
     private function getKernelAdvisors(): array
     {
         return [];
-    }
-
-    private function resolveArchitecture(): ?ArchitecturePackageInterface
-    {
-        $installed = InstalledPackages::get($this->projectDir);
-        $class = $installed['architecture'];
-
-        if ($class && class_exists($class) && is_subclass_of($class, ArchitecturePackageInterface::class)) {
-            return new $class();
-        }
-
-        return null;
     }
 }

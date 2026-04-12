@@ -27,7 +27,7 @@ class MakeCommand extends Command
 
     protected function handle(Input $input, Output $output): int
     {
-        $architecture = $this->resolveArchitecture();
+        $architecture = InstalledPackages::resolveArchitecture($this->projectDir);
 
         if ($architecture === null) {
             $output->error('No architecture package installed. Generators require an architecture package.');
@@ -144,17 +144,5 @@ class MakeCommand extends Command
         }
 
         return $generators;
-    }
-
-    private function resolveArchitecture(): ?ArchitecturePackageInterface
-    {
-        $installed = InstalledPackages::get($this->projectDir);
-        $class = $installed['architecture'];
-
-        if ($class && class_exists($class) && is_subclass_of($class, ArchitecturePackageInterface::class)) {
-            return new $class();
-        }
-
-        return null;
     }
 }

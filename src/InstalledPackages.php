@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Scafera\Kernel;
 
+use Scafera\Kernel\Contract\ArchitecturePackageInterface;
+
 class InstalledPackages
 {
     public static function get(string $projectDir): array
@@ -62,6 +64,18 @@ class InstalledPackages
         $architecture = $architecturePackages ? reset($architecturePackages) : null;
 
         return ['bundles' => $bundles, 'architecture' => $architecture];
+    }
+
+    public static function resolveArchitecture(string $projectDir): ?ArchitecturePackageInterface
+    {
+        $installed = self::get($projectDir);
+        $class = $installed['architecture'];
+
+        if ($class && class_exists($class) && is_subclass_of($class, ArchitecturePackageInterface::class)) {
+            return new $class();
+        }
+
+        return null;
     }
 
     private static function writeCache(string $cachePath, array $result): void
