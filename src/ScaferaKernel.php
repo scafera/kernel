@@ -234,8 +234,8 @@ class ScaferaKernel extends BaseKernel
         }
         unset($config['env']);
 
-        if (isset($config['parameters'])) {
-            foreach ($config['parameters'] as $key => $value) {
+        if (array_key_exists('parameters', $config)) {
+            foreach ($config['parameters'] ?? [] as $key => $value) {
                 $c->parameters()->set($key, $value);
             }
             unset($config['parameters']);
