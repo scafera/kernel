@@ -99,7 +99,7 @@ class ScaferaKernel extends BaseKernel
             ->bind('string $projectDir', $this->getProjectDir())
             ->load('Scafera\\Kernel\\Service\\', dirname(__DIR__) . '/src/Service/');
 
-        $this->registerHttpInfrastructure($c);
+        $this->registerBuiltinServices($c);
 
         $this->loadArchitectureServices($c);
 
@@ -130,7 +130,7 @@ class ScaferaKernel extends BaseKernel
         }
     }
 
-    private function registerHttpInfrastructure(ContainerConfigurator $c): void
+    private function registerBuiltinServices(ContainerConfigurator $c): void
     {
         $c->services()
             ->set(RequestResolver::class)
