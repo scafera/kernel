@@ -45,12 +45,40 @@ class ScaferaKernel extends BaseKernel
     protected function build(ContainerBuilder $container): void
     {
         $this->checkForbiddenStructure();
+        $this->checkRequiredStructure();
 
         $container->addCompilerPass(
             new ControllerBoundaryPass($this->projectDir, $this->getArchitecturePackage()),
         );
 
         $this->registerGeneratorCommands($container);
+    }
+
+    private function checkRequiredStructure(): void
+    {
+        if (\PHP_SAPI === 'cli') {
+            return;
+        }
+
+        $violations = [];
+
+        foreach (KernelStructureValidator::REQUIRED as $path => $type) {
+            $full = $this->projectDir . '/' . $path;
+            $missing = $type === 'file' ? !is_file($full) : !is_dir($full);
+
+            if ($missing) {
+                $kind = $type === 'file' ? 'file' : 'directory';
+                $violations[] = '  - ' . $path . ': Required ' . $kind . ' does not exist.';
+            }
+        }
+
+        if (!empty($violations)) {
+            throw new \LogicException(
+                "Scafera structure violation: required files or directories are missing.\n\n"
+                . implode("\n", $violations)
+                . "\n\nRun 'vendor/bin/scafera make:controller' to generate your first controller and set up the project structure.",
+            );
+        }
     }
 
     private function checkForbiddenStructure(): void
