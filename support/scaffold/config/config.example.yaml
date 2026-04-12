@@ -1,4 +1,5 @@
 env:
     APP_SECRET: 'change-me'
 
-parameters: ~
+parameters:
+    # scafera.welcome: '<html><body><h1>My App</h1></body></html>'

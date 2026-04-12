@@ -12,6 +12,7 @@ use Scafera\Kernel\DependencyInjection\ControllerBoundaryPass;
 use Scafera\Kernel\Validator\KernelStructureValidator;
 use Scafera\Kernel\Http\Internal\RequestResolver;
 use Scafera\Kernel\Http\Internal\ResponseListener;
+use Scafera\Kernel\Http\Internal\WelcomeListener;
 use Scafera\Kernel\Http\Internal\RouteLoader;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -134,6 +135,17 @@ class ScaferaKernel extends BaseKernel
 
         $this->loadArchitectureServices($c);
 
+        $arch = $this->getArchitecturePackage();
+        $archName = $arch ? ucfirst($arch->getName()) : '';
+        $welcome = '<!DOCTYPE html><title>Scafera</title>'
+            . '<body style="font-family:system-ui;text-align:center;padding-top:15%;">'
+            . '<h1 style="margin-bottom:10px;color:#234da0">Scafera</h1>'
+            . '<p style="color:#555;">Create a controller for the root page to get started:'
+            . '<br><code>vendor/bin/scafera make:controller Index</code></p>'
+            . ($archName ? '<p style="color:#999;font-size:0.85em;">' . $archName . ' Architecture</p>' : '')
+            . '</body>';
+        $c->parameters()->set('scafera.welcome', $welcome);
+
         $this->loadOverrides($c);
     }
 
@@ -168,6 +180,12 @@ class ScaferaKernel extends BaseKernel
                 ->autowire()
                 ->tag('controller.argument_value_resolver', ['priority' => 10])
             ->set(ResponseListener::class)
+                ->tag('kernel.event_subscriber')
+            ->set(WelcomeListener::class)
+                ->args([
+                    '%scafera.welcome%',
+                    $this->debug,
+                ])
                 ->tag('kernel.event_subscriber');
 
         $c->services()
