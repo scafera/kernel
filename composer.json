@@ -3,6 +3,12 @@
     "description": "Kernel package for the Scafera framework",
     "type": "library",
     "license": "MIT",
+    "keywords": ["scafera", "framework", "kernel", "php"],
+    "homepage": "https://github.com/scafera/kernel",
+    "support": {
+        "issues": "https://github.com/scafera/kernel/issues",
+        "source": "https://github.com/scafera/kernel"
+    },
     "require": {
         "php": ">=8.4",
         "symfony/console": "^8.0",
