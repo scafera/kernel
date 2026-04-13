@@ -19,7 +19,6 @@ Install an architecture package (e.g. `scafera/layered`) to define structure, be
 ## What it provides
 
 - `ScaferaKernel` — single boot class, user projects never define a Kernel
-- `public/index.php` — HTTP entry point
 - `bin/scafera` — CLI entry point (`vendor/bin/scafera`)
 - `Bootstrap` — pre-boot environment preparation
 - Architecture package support via `ArchitecturePackageInterface`
@@ -52,12 +51,14 @@ This file can override any bundle configuration and set environment variables:
 
 ```yaml
 env:
-  APP_SECRET: your-secret-here
+  APP_DEBUG: '0'
 
 framework:
   session:
     cookie_secure: true
 ```
+
+Secrets like `APP_SECRET` belong in `config/config.local.yaml` (git-ignored). The scaffold plugin generates this file with a random secret during `composer create-project`.
 
 There is no `config/packages/` directory — the kernel does not scan for it.
 
@@ -192,9 +193,8 @@ Class-level `#[Route]` sets a prefix for method-level routes. A class-level `#[R
 ## Built-in commands
 
 ```bash
-vendor/bin/scafera validate           # Run validators from the installed architecture package
+vendor/bin/scafera validate           # Run all validators and advisors from installed Scafera packages
 vendor/bin/scafera about              # Show framework and environment information
-vendor/bin/scafera symfony            # All Symfony commands
 ```
 
 ## What the kernel does NOT own
