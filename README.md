@@ -197,22 +197,50 @@ vendor/bin/scafera validate           # Run all validators and advisors from ins
 vendor/bin/scafera about              # Show framework and environment information
 ```
 
+## Scafera Packages
+
+### Architecture packages
+
+Define folder structure, service discovery, and convention enforcement.
+
+| Package | Description |
+|---------|-------------|
+| `scafera/layered` | Layered architecture conventions |
+
+### Capability packages
+
+Add optional functionality. Install only what you need.
+
+| Package | Description |
+|---------|-------------|
+| `scafera/database` | Database persistence (Doctrine) |
+| `scafera/frontend` | Template rendering (Twig) |
+| `scafera/log` | Structured logging (PSR-3) |
+
+### Tooling
+
+| Package | Description |
+|---------|-------------|
+| `scafera/scaffold` | Composer plugin that scaffolds project files |
+
+### Project templates
+
+| Package | Description |
+|---------|-------------|
+| `scafera/layered-web` | Layered web application template |
+
 ## What the kernel does NOT own
 
 - **Folder conventions** — defined by architecture packages
-- **Twig / presentation** — `scafera/frontend`
-- **Generators and validators** — architecture packages + `scafera/tools`
-- **Profiler / debug toolbar** — `scafera/profiler`
+- **Presentation** — `scafera/frontend`
+- **Persistence** — `scafera/database`
+- **Logging** — `scafera/log`
 - **Business logic** — your project
 
 ## Requirements
 
 - PHP >= 8.4
 - Symfony 8
-
-## Usage
-
-This package is not intended to be used directly. It is installed as part of a Scafera-based setup and works in combination with an architecture package that defines the application structure.
 
 ## License
 
