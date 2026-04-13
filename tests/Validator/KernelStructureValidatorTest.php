@@ -45,21 +45,19 @@ class KernelStructureValidatorTest extends TestCase
         $this->assertStringContainsString('composer.json', $violations[0]);
     }
 
-    public function testFailsWhenSrcMissing(): void
+    public function testPassesWhenSrcMissing(): void
     {
         mkdir($this->tmpDir . '/public', 0777, true);
         mkdir($this->tmpDir . '/var', 0777, true);
         file_put_contents($this->tmpDir . '/composer.json', '{}');
 
-        $violations = $this->validator->validate($this->tmpDir);
-        $this->assertCount(1, $violations);
-        $this->assertStringContainsString('src/', $violations[0]);
+        $this->assertSame([], $this->validator->validate($this->tmpDir));
     }
 
     public function testFailsWithMultipleMissing(): void
     {
         $violations = $this->validator->validate($this->tmpDir);
-        $this->assertCount(4, $violations);
+        $this->assertCount(3, $violations);
     }
 
     public function testFailsWhenConfigPackagesExists(): void

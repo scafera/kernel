@@ -10,7 +10,6 @@ final class KernelStructureValidator implements ValidatorInterface
 {
     public const REQUIRED = [
         'composer.json' => 'file',
-        'src' => 'dir',
         'public' => 'dir',
         'var' => 'dir',
     ];
