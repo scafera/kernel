@@ -11,6 +11,7 @@ use Scafera\Kernel\Console\Output;
 use Scafera\Kernel\Contract\AdvisorInterface;
 use Scafera\Kernel\Contract\ValidatorInterface;
 use Scafera\Kernel\InstalledPackages;
+use Scafera\Kernel\Validator\ConfigParameterValidator;
 use Scafera\Kernel\Validator\KernelStructureValidator;
 
 #[AsCommand('validate', description: 'Validate project structure against architecture rules')]
@@ -150,6 +151,7 @@ class ValidateCommand extends Command
     {
         return [
             new KernelStructureValidator(),
+            new ConfigParameterValidator(),
         ];
     }
 
