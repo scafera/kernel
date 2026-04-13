@@ -27,4 +27,7 @@ interface ArchitecturePackageInterface
 
     /** @return list<AdvisorInterface> Advisor instances (warnings, never block) */
     public function getAdvisors(): array;
+
+    /** @return ?array{dir: string, namespace: string} Relative entity dir and namespace, or null if no entities */
+    public function getEntityMapping(): ?array;
 }
