@@ -35,8 +35,12 @@ final class InstalledPackages
         }
         $bundles = [];
         $architecturePackages = [];
+        $companionBundles = [];
+        $installedNames = [];
 
         foreach ($installed['packages'] ?? [] as $pkg) {
+            $installedNames[$pkg['name']] = true;
+
             if (($pkg['type'] ?? '') === 'symfony-bundle' && $pkg['name'] !== 'symfony/framework-bundle') {
                 $pkgDir = realpath($projectDir . '/vendor/composer/' . ($pkg['install-path'] ?? ''));
                 if ($pkgDir) {
@@ -51,6 +55,18 @@ final class InstalledPackages
 
             if (isset($pkg['extra']['scafera-architecture'])) {
                 $architecturePackages[$pkg['name']] = $pkg['extra']['scafera-architecture'];
+            }
+
+            if (isset($pkg['extra']['scafera-bundles'])) {
+                foreach ($pkg['extra']['scafera-bundles'] as $companionPkg => $companionClass) {
+                    $companionBundles[$companionPkg] = $companionClass;
+                }
+            }
+        }
+
+        foreach ($companionBundles as $companionPkg => $companionClass) {
+            if (isset($installedNames[$companionPkg]) && !\in_array($companionClass, $bundles, true)) {
+                $bundles[] = $companionClass;
             }
         }
 

@@ -112,6 +112,97 @@ class InstalledPackagesTest extends TestCase
         $this->assertSame(['Test\\MyBundle\\MyTestBundle'], $result['bundles']);
     }
 
+    public function testDiscoverCompanionBundleWhenPackageInstalled(): void
+    {
+        $this->writeInstalledJson([
+            [
+                'name' => 'scafera/asset',
+                'type' => 'symfony-bundle',
+                'extra' => [
+                    'scafera-bundles' => [
+                        'vendor/some-bundle' => 'Vendor\\SomeBundle\\SomeBundle',
+                    ],
+                ],
+            ],
+            [
+                'name' => 'vendor/some-bundle',
+                'type' => 'library',
+            ],
+        ]);
+
+        $result = InstalledPackages::get($this->tmpDir);
+
+        $this->assertContains('Vendor\\SomeBundle\\SomeBundle', $result['bundles']);
+    }
+
+    public function testIgnoresCompanionWhenPackageNotInstalled(): void
+    {
+        $this->writeInstalledJson([
+            [
+                'name' => 'scafera/asset',
+                'type' => 'symfony-bundle',
+                'extra' => [
+                    'scafera-bundles' => [
+                        'vendor/not-installed' => 'Vendor\\NotInstalled\\SomeBundle',
+                    ],
+                ],
+            ],
+        ]);
+
+        $result = InstalledPackages::get($this->tmpDir);
+
+        $this->assertNotContains('Vendor\\NotInstalled\\SomeBundle', $result['bundles']);
+    }
+
+    public function testDeduplicatesCompanionWithTypeDiscovery(): void
+    {
+        $bundleDir = $this->tmpDir . '/vendor/test/my-bundle';
+        mkdir($bundleDir, 0777, true);
+        file_put_contents($bundleDir . '/MyTestBundle.php', '<?php');
+
+        $this->writeInstalledJson([
+            [
+                'name' => 'test/my-bundle',
+                'type' => 'symfony-bundle',
+                'install-path' => '../test/my-bundle',
+                'autoload' => ['psr-4' => ['Test\\MyBundle\\' => '']],
+            ],
+            [
+                'name' => 'scafera/asset',
+                'type' => 'symfony-bundle',
+                'extra' => [
+                    'scafera-bundles' => [
+                        'test/my-bundle' => 'Test\\MyBundle\\MyTestBundle',
+                    ],
+                ],
+            ],
+        ]);
+
+        $result = InstalledPackages::get($this->tmpDir);
+
+        $this->assertSame(1, \count(array_filter($result['bundles'], fn($b) => $b === 'Test\\MyBundle\\MyTestBundle')));
+    }
+
+    public function testDoesNotDiscoverLibraryTypeBundles(): void
+    {
+        $bundleDir = $this->tmpDir . '/vendor/vendor/lib-bundle';
+        mkdir($bundleDir, 0777, true);
+        file_put_contents($bundleDir . '/LibBundle.php', '<?php');
+
+        $this->writeInstalledJson([
+            [
+                'name' => 'vendor/lib-bundle',
+                'type' => 'library',
+                'install-path' => '../vendor/lib-bundle',
+                'autoload' => ['psr-4' => ['Vendor\\LibBundle\\' => '']],
+            ],
+        ]);
+
+        $result = InstalledPackages::get($this->tmpDir);
+
+        $this->assertNotContains('Vendor\\LibBundle\\LibBundle', $result['bundles']);
+    }
+
     public function testThrowsOnMultipleArchitecturePackages(): void
     {
         $this->writeInstalledJson([
