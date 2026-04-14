@@ -30,4 +30,13 @@ interface ArchitecturePackageInterface
 
     /** @return ?array{dir: string, namespace: string} Relative entity dir and namespace, or null if no entities */
     public function getEntityMapping(): ?array;
+
+    /** @return ?string Relative path to translation files directory (e.g. 'support/translations'), or null if not applicable */
+    public function getTranslationsDir(): ?string;
+
+    /** @return ?string Relative path to file storage directory (e.g. 'var/uploads'), or null if not applicable */
+    public function getStorageDir(): ?string;
+
+    /** @return ?string Relative path to frontend assets directory (e.g. 'assets'), or null if not applicable */
+    public function getAssetsDir(): ?string;
 }
