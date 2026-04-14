@@ -63,4 +63,10 @@ final class Request
     {
         return $this->inner->attributes->get('_route_params', []);
     }
+
+    /** @internal For use by Scafera capability packages only. Not part of the public API. */
+    public function getSymfonyRequest(): SymfonyRequest
+    {
+        return $this->inner;
+    }
 }
