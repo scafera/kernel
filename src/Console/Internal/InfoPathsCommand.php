@@ -24,25 +24,25 @@ class InfoPathsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArg('source', 'Filter paths by source (e.g. kernel, layered)', required: false);
+        $this->addArg('label', 'Filter paths by label (e.g. cache, storage, entity)', required: false);
         $this->addFlag('json', null, 'Output as JSON');
     }
 
     protected function handle(Input $input, Output $output): int
     {
-        $sourceFilter = $input->argument('source');
+        $labelFilter = $input->argument('label');
         $jsonOutput = $input->option('json');
 
         $entries = $this->collectPaths();
 
-        if ($sourceFilter !== null) {
+        if ($labelFilter !== null) {
             $entries = array_values(array_filter(
                 $entries,
-                fn(array $entry) => $entry['source'] === $sourceFilter,
+                fn(array $entry) => $entry['label'] === $labelFilter,
             ));
 
             if (empty($entries) && !$jsonOutput) {
-                $output->writeln("No paths registered by '$sourceFilter'.");
+                $output->writeln("No path found for '$labelFilter'.");
 
                 return self::SUCCESS;
             }
