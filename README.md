@@ -213,9 +213,13 @@ Add optional functionality. Install only what you need.
 
 | Package | Description |
 |---------|-------------|
+| `scafera/auth` | Authentication and access control |
 | `scafera/database` | Database persistence (Doctrine) |
+| `scafera/file` | File upload, validation, and storage |
+| `scafera/form` | Form handling and DTO validation |
 | `scafera/frontend` | Template rendering (Twig) |
 | `scafera/log` | Structured logging (PSR-3) |
+| `scafera/translate` | Translation and locale management |
 
 ### Tooling
 
