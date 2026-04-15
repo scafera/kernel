@@ -114,6 +114,11 @@ class InfoPathsCommand extends Command
         if ($assets !== null) {
             $entries[] = ['label' => 'assets', 'path' => rtrim($assets, '/') . '/', 'source' => $source];
         }
+
+        $templates = $architecture->getTemplatesDir();
+        if ($templates !== null) {
+            $entries[] = ['label' => 'templates', 'path' => rtrim($templates, '/') . '/', 'source' => $source];
+        }
     }
 
     /** @param list<array{label: string, path: string, source: string}> $entries */

@@ -39,4 +39,7 @@ interface ArchitecturePackageInterface
 
     /** @return ?string Relative path to frontend assets directory (e.g. 'assets'), or null if not applicable */
     public function getAssetsDir(): ?string;
+
+    /** @return ?string Relative path to template files directory (e.g. 'resources/templates'), or null if not applicable */
+    public function getTemplatesDir(): ?string;
 }
