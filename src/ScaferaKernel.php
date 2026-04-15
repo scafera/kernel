@@ -198,6 +198,7 @@ class ScaferaKernel extends BaseKernel
                 ->args([
                     $this->getProjectDir(),
                     tagged_iterator('scafera.validator'),
+                    tagged_iterator('scafera.advisor'),
                 ])
                 ->tag('console.command')
             ->set(InfoPathsCommand::class)

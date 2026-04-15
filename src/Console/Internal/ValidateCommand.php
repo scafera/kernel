@@ -17,10 +17,14 @@ use Scafera\Kernel\Validator\KernelStructureValidator;
 #[AsCommand('validate', description: 'Validate project structure against architecture rules')]
 class ValidateCommand extends Command
 {
-    /** @param iterable<ValidatorInterface> $packageValidators */
+    /**
+     * @param iterable<ValidatorInterface> $packageValidators
+     * @param iterable<AdvisorInterface> $packageAdvisors
+     */
     public function __construct(
         private readonly string $projectDir,
         private readonly iterable $packageValidators = [],
+        private readonly iterable $packageAdvisors = [],
     ) {
         parent::__construct();
     }
@@ -60,13 +64,20 @@ class ValidateCommand extends Command
         $pkgViolations = 0;
         $packageValidatorList = iterator_to_array($this->packageValidators);
 
-        if (!empty($packageValidatorList)) {
+        $packageAdvisorList = iterator_to_array($this->packageAdvisors);
+
+        if (!empty($packageValidatorList) || !empty($packageAdvisorList)) {
             $output->writeln('');
             $output->writeln('<info>Package checks:</info>');
-            [$pkgPassed, $pkgFailed, $pkgViolations] = $this->runValidatorInstances(
-                $packageValidatorList,
-                $output,
-            );
+
+            if (!empty($packageValidatorList)) {
+                [$pkgPassed, $pkgFailed, $pkgViolations] = $this->runValidatorInstances(
+                    $packageValidatorList,
+                    $output,
+                );
+            }
+
+            $this->runAdvisors($packageAdvisorList, $output);
         }
 
         // Summary
