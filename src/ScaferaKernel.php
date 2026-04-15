@@ -7,7 +7,9 @@ namespace Scafera\Kernel;
 use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Console\Internal\MakeCommand;
 use Symfony\Component\DependencyInjection\Definition;
+use Scafera\Kernel\Console\Internal\InfoPathsCommand;
 use Scafera\Kernel\Console\Internal\ValidateCommand;
+use Scafera\Kernel\Contract\PathProviderInterface;
 use Scafera\Kernel\DependencyInjection\ControllerBoundaryPass;
 use Scafera\Kernel\Validator\KernelStructureValidator;
 use Scafera\Kernel\Http\Internal\RequestResolver;
@@ -53,6 +55,9 @@ class ScaferaKernel extends BaseKernel
         );
 
         $this->registerGeneratorCommands($container);
+
+        $container->registerForAutoconfiguration(PathProviderInterface::class)
+            ->addTag('scafera.path_provider');
     }
 
     private function checkRequiredStructure(): void
@@ -193,6 +198,12 @@ class ScaferaKernel extends BaseKernel
                 ->args([
                     $this->getProjectDir(),
                     tagged_iterator('scafera.validator'),
+                ])
+                ->tag('console.command')
+            ->set(InfoPathsCommand::class)
+                ->args([
+                    $this->getProjectDir(),
+                    tagged_iterator('scafera.path_provider'),
                 ])
                 ->tag('console.command');
     }
