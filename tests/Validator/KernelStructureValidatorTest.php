@@ -80,6 +80,38 @@ class KernelStructureValidatorTest extends TestCase
         $this->assertStringContainsString('Kernel.php', $violations[0]);
     }
 
+    public function testFailsOnRootCacheDir(): void
+    {
+        $this->createValidStructure();
+        mkdir($this->tmpDir . '/cache', 0777, true);
+
+        $violations = $this->validator->validate($this->tmpDir);
+        $this->assertCount(1, $violations);
+        $this->assertStringContainsString("'cache/'", $violations[0]);
+        $this->assertStringContainsString('var/cache/', $violations[0]);
+    }
+
+    public function testFailsOnRootLogDir(): void
+    {
+        $this->createValidStructure();
+        mkdir($this->tmpDir . '/log', 0777, true);
+
+        $violations = $this->validator->validate($this->tmpDir);
+        $this->assertCount(1, $violations);
+        $this->assertStringContainsString("'log/'", $violations[0]);
+    }
+
+    public function testFailsOnRootStorageDir(): void
+    {
+        $this->createValidStructure();
+        mkdir($this->tmpDir . '/storage', 0777, true);
+
+        $violations = $this->validator->validate($this->tmpDir);
+        $this->assertCount(1, $violations);
+        $this->assertStringContainsString("'storage/'", $violations[0]);
+        $this->assertStringContainsString('var/uploads/', $violations[0]);
+    }
+
     public function testName(): void
     {
         $this->assertSame('Kernel structure', $this->validator->getName());

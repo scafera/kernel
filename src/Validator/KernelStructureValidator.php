@@ -23,6 +23,26 @@ final class KernelStructureValidator implements ValidatorInterface
             'type' => 'file',
             'reason' => 'Scafera provides its own kernel. Remove src/Kernel.php.',
         ],
+        'cache' => [
+            'type' => 'dir',
+            'reason' => "'cache/' at project root is not allowed — Scafera stores cache under 'var/cache/'.",
+        ],
+        'log' => [
+            'type' => 'dir',
+            'reason' => "'log/' at project root is not allowed — Scafera stores logs under 'var/log/'.",
+        ],
+        'logs' => [
+            'type' => 'dir',
+            'reason' => "'logs/' at project root is not allowed — Scafera stores logs under 'var/log/'.",
+        ],
+        'storage' => [
+            'type' => 'dir',
+            'reason' => "'storage/' at project root is not allowed — user-generated files belong under 'var/uploads/'.",
+        ],
+        'uploads' => [
+            'type' => 'dir',
+            'reason' => "'uploads/' at project root is not allowed — user-generated files belong under 'var/uploads/'.",
+        ],
     ];
 
     public function getName(): string
