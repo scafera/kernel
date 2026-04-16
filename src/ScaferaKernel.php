@@ -16,6 +16,7 @@ use Scafera\Kernel\Http\Internal\RequestResolver;
 use Scafera\Kernel\Http\Internal\ResponseListener;
 use Scafera\Kernel\Http\Internal\WelcomeListener;
 use Scafera\Kernel\Http\Internal\RouteLoader;
+use Symfony\Bundle\FrameworkBundle\DependencyInjection\Compiler\PhpConfigReferenceDumpPass;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -58,6 +59,27 @@ class ScaferaKernel extends BaseKernel
 
         $container->registerForAutoconfiguration(PathProviderInterface::class)
             ->addTag('scafera.path_provider');
+
+        $this->removeSymfonyReferenceDumpPass($container);
+    }
+
+    /**
+     * Symfony's FrameworkBundle writes config/reference.php in debug mode — a
+     * PHP type-stub for IDE autocompletion of App::config([...]) callers.
+     * Scafera uses YAML for configuration, so the stub has no audience; strip
+     * the pass to prevent the file from being regenerated on cache warm.
+     */
+    private function removeSymfonyReferenceDumpPass(ContainerBuilder $container): void
+    {
+        if (!class_exists(PhpConfigReferenceDumpPass::class)) {
+            return;
+        }
+
+        $passConfig = $container->getCompiler()->getPassConfig();
+        $passConfig->setBeforeOptimizationPasses(array_values(array_filter(
+            $passConfig->getBeforeOptimizationPasses(),
+            static fn($pass) => !$pass instanceof PhpConfigReferenceDumpPass,
+        )));
     }
 
     private function checkRequiredStructure(): void
