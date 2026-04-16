@@ -1,10 +1,15 @@
 # scafera/kernel
 
-Scafera Kernel is the execution core of the Scafera framework. It provides a minimal, controlled runtime environment and defines the boundaries within which applications operate.
-
-It treats Symfony as a dependency — user projects contain only business logic.
-
-Scafera is opinionated by design — it enforces boundaries, limits configuration surface, and removes decisions that don't belong to application developers. The goal is a framework that is predictable and hard to misuse.
+> **Provides:** The boot core of Scafera — discovers bundles, loads an architecture package, enforces structural boundaries, and hands off to Symfony. User projects never define a Kernel.
+>
+> **Depends on:** A host project with a standard layout (`public/`, `var/`, `config/`), a Composer-installed architecture package implementing `ArchitecturePackageInterface`, Symfony 8 + FrameworkBundle, and an `APP_SECRET` provided via `config/` overrides or OS env.
+>
+> **Extension points:**
+> - Contracts in `Scafera\Kernel\Contract\` — `ArchitecturePackageInterface` (primary), `ValidatorInterface`, `AdvisorInterface`, `GeneratorInterface`, `PathProviderInterface`, `ViewInterface`
+> - Attributes — `#[Route]` (HTTP), `#[AsCommand]` (CLI), `#[Config]` (env/parameter injection)
+> - DI tags — `scafera.validator`, `scafera.advisor`, `scafera.path_provider` (auto-collected)
+>
+> **Not responsible for:** Routing/commands/services without an architecture package · folder conventions (owned by architecture packages) · presentation (`scafera/frontend`) · persistence (`scafera/database`) · logging (`scafera/log`) · HTTP header/CORS customization · `.env` files · `config/packages/` scanning · userland event dispatch.
 
 ## Headless by design
 
@@ -15,13 +20,6 @@ The kernel is intentionally non-functional without an architecture package. With
 - Only built-in commands work (`about`, `validate`, `cache:clear`)
 
 Install an architecture package (e.g. `scafera/layered`) to define structure, behavior, and rules.
-
-## What it provides
-
-- `ScaferaKernel` — single boot class, user projects never define a Kernel
-- `bin/scafera` — CLI entry point (`vendor/bin/scafera`)
-- `Bootstrap` — pre-boot environment preparation
-- Architecture package support via `ArchitecturePackageInterface`
 
 ## Design principles
 
@@ -81,6 +79,7 @@ The kernel defines contracts that architecture and capability packages implement
 | `ValidatorInterface` | Hard validation rule (affects exit code) |
 | `AdvisorInterface` | Soft advisory check (never affects exit code) |
 | `GeneratorInterface` | Code generator for `scafera make:*` commands |
+| `PathProviderInterface` | Registers paths shown by `info:paths` |
 | `ViewInterface` | Template rendering (implemented by `scafera/frontend`) |
 
 ## HTTP types
@@ -232,14 +231,6 @@ Add optional functionality. Install only what you need.
 | Package | Description |
 |---------|-------------|
 | `scafera/layered-web` | Layered web application template |
-
-## What the kernel does NOT own
-
-- **Folder conventions** — defined by architecture packages
-- **Presentation** — `scafera/frontend`
-- **Persistence** — `scafera/database`
-- **Logging** — `scafera/log`
-- **Business logic** — your project
 
 ## Requirements
 
