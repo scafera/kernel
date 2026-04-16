@@ -1,5 +1,7 @@
 # scafera/kernel
 
+Scafera Kernel is the execution core of the Scafera framework. It provides a minimal, controlled runtime environment and defines the boundaries within which applications operate.
+
 > **Provides:** The boot core of Scafera — discovers bundles, loads an architecture package, enforces structural boundaries, and hands off to Symfony. User projects never define a Kernel.
 >
 > **Depends on:** A host project with a standard layout (`public/`, `var/`, `config/`), a Composer-installed architecture package implementing `ArchitecturePackageInterface`, Symfony 8 + FrameworkBundle, and an `APP_SECRET` provided via `config/` overrides or OS env.
