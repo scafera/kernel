@@ -45,6 +45,11 @@ final class KernelStructureValidator implements ValidatorInterface
         ],
     ];
 
+    public function getId(): string
+    {
+        return 'kernel.structure';
+    }
+
     public function getName(): string
     {
         return 'Kernel structure';

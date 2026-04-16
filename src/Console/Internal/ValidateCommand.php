@@ -9,10 +9,13 @@ use Scafera\Kernel\Console\Command;
 use Scafera\Kernel\Console\Input;
 use Scafera\Kernel\Console\Output;
 use Scafera\Kernel\Contract\AdvisorInterface;
+use Scafera\Kernel\Contract\ArchitecturePackageInterface;
 use Scafera\Kernel\Contract\ValidatorInterface;
 use Scafera\Kernel\InstalledPackages;
 use Scafera\Kernel\Validator\ConfigParameterValidator;
 use Scafera\Kernel\Validator\KernelStructureValidator;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 
 #[AsCommand('validate', description: 'Validate project structure against architecture rules')]
 class ValidateCommand extends Command
@@ -29,21 +32,38 @@ class ValidateCommand extends Command
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addFlag('strict', null, 'Run all rules regardless of project/architecture ignore lists');
+    }
+
     protected function handle(Input $input, Output $output): int
     {
         $output->writeln('<comment>Scafera Structure Validation</comment>');
         $output->writeln('');
+
+        $strict = (bool) $input->option('strict');
+        $architecture = InstalledPackages::resolveArchitecture($this->projectDir);
+        $ignoreSet = $this->buildIgnoreSet($architecture, $output);
+        $effectiveIgnores = $strict ? [] : $ignoreSet;
+
+        /** @var list<array{id: string, name: string}> $ignored */
+        $ignored = [];
+        /** @var list<string> $seenIds */
+        $seenIds = [];
 
         // Phase 1: Kernel checks (always run)
         $output->writeln('<info>Kernel checks:</info>');
         [$kernelPassed, $kernelFailed, $kernelViolations] = $this->runValidatorInstances(
             $this->getKernelValidators(),
             $output,
+            $effectiveIgnores,
+            $ignored,
+            $seenIds,
         );
-        $this->runAdvisors($this->getKernelAdvisors(), $output);
+        $this->runAdvisors($this->getKernelAdvisors(), $output, $effectiveIgnores, $ignored, $seenIds);
 
         // Phase 2: Architecture checks (if installed)
-        $architecture = InstalledPackages::resolveArchitecture($this->projectDir);
         $archPassed = 0;
         $archFailed = 0;
         $archViolations = 0;
@@ -54,8 +74,11 @@ class ValidateCommand extends Command
             [$archPassed, $archFailed, $archViolations] = $this->runValidatorInstances(
                 $architecture->getValidators(),
                 $output,
+                $effectiveIgnores,
+                $ignored,
+                $seenIds,
             );
-            $this->runAdvisors($architecture->getAdvisors(), $output);
+            $this->runAdvisors($architecture->getAdvisors(), $output, $effectiveIgnores, $ignored, $seenIds);
         }
 
         // Phase 3: Capability package checks (tagged validators)
@@ -74,34 +97,68 @@ class ValidateCommand extends Command
                 [$pkgPassed, $pkgFailed, $pkgViolations] = $this->runValidatorInstances(
                     $packageValidatorList,
                     $output,
+                    $effectiveIgnores,
+                    $ignored,
+                    $seenIds,
                 );
             }
 
-            $this->runAdvisors($packageAdvisorList, $output);
+            $this->runAdvisors($packageAdvisorList, $output, $effectiveIgnores, $ignored, $seenIds);
+        }
+
+        // Ignored block (grouped at the end)
+        if (!empty($ignored)) {
+            $output->writeln('');
+            $output->writeln('<info>Ignored:</info>');
+            foreach ($ignored as $entry) {
+                $output->writeln(sprintf('  <fg=yellow>[IGNORED]</> %s (%s)', $entry['name'], $entry['id']));
+            }
+        }
+
+        // Unknown ignore IDs (typo protection)
+        $unknownIgnores = array_values(array_diff($ignoreSet, $seenIds));
+        if (!empty($unknownIgnores)) {
+            $output->writeln('');
+            $output->writeln('<comment>Warning: unknown ignore ID(s) — check for typos:</comment>');
+            foreach ($unknownIgnores as $id) {
+                $output->writeln('  - ' . $id);
+            }
         }
 
         // Summary
         $totalPassed = $kernelPassed + $archPassed + $pkgPassed;
         $totalFailed = $kernelFailed + $archFailed + $pkgFailed;
         $totalViolations = $kernelViolations + $archViolations + $pkgViolations;
+        $ignoredCount = count($ignored);
 
         $output->writeln('');
 
         if ($totalFailed === 0) {
-            $output->success($totalPassed . ' checks passed.');
+            $summary = $totalPassed . ' checks passed.';
+            if ($ignoredCount > 0) {
+                $summary .= ' ' . $ignoredCount . ' rule(s) ignored.';
+            }
+            $output->success($summary);
 
             return self::SUCCESS;
         }
 
-        $output->error($totalFailed . ' check(s) failed, ' . $totalViolations . ' violation(s) found.');
+        $summary = $totalFailed . ' check(s) failed, ' . $totalViolations . ' violation(s) found.';
+        if ($ignoredCount > 0) {
+            $summary .= ' ' . $ignoredCount . ' rule(s) ignored.';
+        }
+        $output->error($summary);
 
         return self::FAILURE;
     }
 
     /**
      * @param list<AdvisorInterface> $advisors
+     * @param list<string> $ignoreSet
+     * @param list<array{id: string, name: string}> $ignored
+     * @param list<string> $seenIds
      */
-    private function runAdvisors(array $advisors, Output $output): void
+    private function runAdvisors(array $advisors, Output $output, array $ignoreSet, array &$ignored, array &$seenIds): void
     {
         if (empty($advisors)) {
             return;
@@ -110,6 +167,13 @@ class ValidateCommand extends Command
         $output->writeln('');
 
         foreach ($advisors as $advisor) {
+            $seenIds[] = $advisor->getId();
+
+            if (in_array($advisor->getId(), $ignoreSet, true)) {
+                $ignored[] = ['id' => $advisor->getId(), 'name' => $advisor->getName()];
+                continue;
+            }
+
             if ($advisor->skipped($this->projectDir) !== null) {
                 continue;
             }
@@ -129,15 +193,25 @@ class ValidateCommand extends Command
 
     /**
      * @param list<ValidatorInterface> $validators
+     * @param list<string> $ignoreSet
+     * @param list<array{id: string, name: string}> $ignored
+     * @param list<string> $seenIds
      * @return array{int, int, int} [passed, failed, violations]
      */
-    private function runValidatorInstances(array $validators, Output $output): array
+    private function runValidatorInstances(array $validators, Output $output, array $ignoreSet, array &$ignored, array &$seenIds): array
     {
         $passed = 0;
         $failed = 0;
         $totalViolations = 0;
 
         foreach ($validators as $validator) {
+            $seenIds[] = $validator->getId();
+
+            if (in_array($validator->getId(), $ignoreSet, true)) {
+                $ignored[] = ['id' => $validator->getId(), 'name' => $validator->getName()];
+                continue;
+            }
+
             $violations = $validator->validate($this->projectDir);
 
             if (empty($violations)) {
@@ -170,5 +244,42 @@ class ValidateCommand extends Command
     private function getKernelAdvisors(): array
     {
         return [];
+    }
+
+    /**
+     * Union of architecture-level and project-level ignore lists, deduped.
+     *
+     * @return list<string>
+     */
+    private function buildIgnoreSet(?ArchitecturePackageInterface $architecture, Output $output): array
+    {
+        $ignores = $architecture?->getIgnoredRules() ?? [];
+
+        $configFile = $this->projectDir . '/config/config.yaml';
+        if (is_file($configFile)) {
+            try {
+                $config = Yaml::parseFile($configFile);
+            } catch (ParseException $e) {
+                $output->writeln(sprintf(
+                    '<comment>Warning: config/config.yaml is invalid YAML (%s). Ignore list from config not applied.</comment>',
+                    $e->getMessage(),
+                ));
+                $output->writeln('');
+
+                return array_values(array_unique($ignores));
+            }
+
+            $projectIgnores = $config['scafera']['ignore'] ?? [];
+
+            if (is_array($projectIgnores)) {
+                foreach ($projectIgnores as $id) {
+                    if (is_string($id)) {
+                        $ignores[] = $id;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($ignores));
     }
 }

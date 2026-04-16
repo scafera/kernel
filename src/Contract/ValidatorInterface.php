@@ -6,6 +6,9 @@ namespace Scafera\Kernel\Contract;
 
 interface ValidatorInterface
 {
+    /** Stable machine-readable rule ID, format <package>.<rule-slug> (e.g. "layered.service-final"). */
+    public function getId(): string;
+
     public function getName(): string;
 
     /**

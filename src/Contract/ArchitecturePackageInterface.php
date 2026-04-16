@@ -28,6 +28,9 @@ interface ArchitecturePackageInterface
     /** @return list<AdvisorInterface> Advisor instances (warnings, never block) */
     public function getAdvisors(): array;
 
+    /** @return list<string> Rule IDs this architecture ignores by default (e.g. ["layered.controller-test-parity"]) */
+    public function getIgnoredRules(): array;
+
     /** @return ?array{dir: string, namespace: string} Relative entity dir and namespace, or null if no entities */
     public function getEntityMapping(): ?array;
 

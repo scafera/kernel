@@ -6,6 +6,9 @@ namespace Scafera\Kernel\Contract;
 
 interface AdvisorInterface
 {
+    /** Stable machine-readable rule ID, format <package>.<rule-slug> (e.g. "layered.test-sync"). */
+    public function getId(): string;
+
     public function getName(): string;
 
     /** @return string|null null = ready, string = skip reason */

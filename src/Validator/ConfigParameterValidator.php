@@ -8,6 +8,11 @@ use Scafera\Kernel\Contract\ValidatorInterface;
 
 final class ConfigParameterValidator implements ValidatorInterface
 {
+    public function getId(): string
+    {
+        return 'kernel.config-parameters';
+    }
+
     public function getName(): string
     {
         return 'Config parameter references';
