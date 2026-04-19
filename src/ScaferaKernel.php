@@ -322,6 +322,16 @@ class ScaferaKernel extends BaseKernel
         }
 
         foreach ($config as $extension => $values) {
+            if (str_starts_with($extension, 'scafera_')) {
+                throw new \LogicException(sprintf(
+                    "\"%s:\" is not a valid config section in %s.\n"
+                    . "Scafera packages are configured via the parameters: section, not as extension config.\n\n"
+                    . "See https://scafera.github.io/llms.txt for each package's configuration reference.",
+                    $extension,
+                    basename($file),
+                ));
+            }
+
             $c->extension($extension, $values ?? []);
         }
     }
