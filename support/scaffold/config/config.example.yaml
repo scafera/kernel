@@ -1,7 +1,7 @@
 env:
     APP_DEBUG: '0'
     APP_SECRET: 'change-me' #local
-    DATABASE_URL: 'mysql://user:password@host:3306/database?serverVersion=8.0' #local
+    DATABASE_URL: 'mysql://user:password@database:3306/scafera?serverVersion=8.0' #local
 
 parameters:
     # scafera.welcome: '<html><body><h1>My App</h1></body></html>'
